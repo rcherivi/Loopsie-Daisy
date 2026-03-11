@@ -27,3 +27,7 @@ frontend/node_modules/
 package-lock.json
 
 .env
+
+# Ying added to make sure data does not get pushed to GitHub, but we can still use it locally
+# download from google drive
+data/
