@@ -30,4 +30,5 @@ package-lock.json
 
 # Ying added to make sure data does not get pushed to GitHub, but we can still use it locally
 # download from google drive
-data/
+data/images/
+data/crochet_pattern_by_project/
