@@ -6,30 +6,48 @@ To enable AI chat, set USE_LLM = True below. See llm_routes.py for AI code.
 import json
 import os
 from flask import send_from_directory, request, jsonify
-from models import db, Episode, Review
+from models import db, Pattern
+#from models import db, Episode, Review
 
 # ── AI toggle ────────────────────────────────────────────────────────────────
 USE_LLM = False
 # USE_LLM = True
 # ─────────────────────────────────────────────────────────────────────────────
 
-
 def json_search(query):
     if not query or not query.strip():
-        query = "Kardashian"
-    results = db.session.query(Episode, Review).join(
-        Review, Episode.id == Review.id
-    ).filter(
-        Episode.title.ilike(f'%{query}%')
+        query = "crochet"
+    results = db.session.query(Pattern).filter(
+        Pattern.title.ilike(f'%{query}%')
     ).all()
     matches = []
-    for episode, review in results:
+    for pattern in results:
         matches.append({
-            'title': episode.title,
-            'descr': episode.descr,
-            'imdb_rating': review.imdb_rating
+            'title': pattern.title,
+            'descr': pattern.descr,
+            'skill_level': pattern.skill_level,
+            'pattern_link': pattern.pattern_link,
+            'image_path': pattern.image_path
         })
     return matches
+
+
+# def json_search(query):
+#     if not query or not query.strip():
+#         query = "Kardashian"
+#     results = db.session.query(Episode, Review).join(
+#         Review, Episode.id == Review.id
+#     ).filter(
+#         Episode.title.ilike(f'%{query}%')
+#     ).all()
+#     matches = []
+#     for episode, review in results:
+#         matches.append({
+#             'title': episode.title,
+#             'descr': episode.descr,
+#             'imdb_rating': review.imdb_rating
+#         })
+#     return matches
 
 
 def register_routes(app):
