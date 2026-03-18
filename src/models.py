@@ -9,7 +9,6 @@ class Pattern(db.Model):
     title = db.Column(db.String(64), nullable=False)
     descr = db.Column(db.String(2000), nullable=False)
     full_description = db.Column(db.String(2000), nullable=False)
-    pattern_link = db.Column(db.String(1024), nullable=False)
     skill_level = db.Column(db.String(20), nullable= False)
     pattern_link = db.Columns(db.String(100), nullable = False)
     image_path = db.Columns(db.String(50), nullable = False)

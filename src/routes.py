@@ -17,9 +17,9 @@ USE_LLM = False
 def json_search(query):
     if not query or not query.strip():
         query = "crochet"
+    # match given to full description (title, description, etc.)
     results = db.session.query(Pattern).filter(
-        Pattern.title.ilike(f'%{query}%')
-    ).all()
+        Pattern.full_description.ilike(f"%{query}%")).all()
     matches = []
     for pattern in results:
         matches.append({
@@ -30,6 +30,28 @@ def json_search(query):
             'image_path': pattern.image_path
         })
     return matches
+
+def register_routes(app):
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve(path):
+        if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+            return send_from_directory(app.static_folder, path)
+        else:
+            return send_from_directory(app.static_folder, 'index.html')
+
+    @app.route("/api/config")
+    def config():
+        return jsonify({"use_llm": USE_LLM})
+
+    @app.route("/api/patterns")
+    def pattern_search():
+        text = request.args.get("title", "")
+        return jsonify(json_search(text))
+
+    if USE_LLM:
+        from llm_routes import register_chat_route
+        register_chat_route(app, json_search)
 
 
 # def json_search(query):
@@ -50,24 +72,24 @@ def json_search(query):
 #     return matches
 
 
-def register_routes(app):
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def serve(path):
-        if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-            return send_from_directory(app.static_folder, path)
-        else:
-            return send_from_directory(app.static_folder, 'index.html')
+# def register_routes(app):
+#     @app.route('/', defaults={'path': ''})
+#     @app.route('/<path:path>')
+#     def serve(path):
+#         if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+#             return send_from_directory(app.static_folder, path)
+#         else:
+#             return send_from_directory(app.static_folder, 'index.html')
 
-    @app.route("/api/config")
-    def config():
-        return jsonify({"use_llm": USE_LLM})
+#     @app.route("/api/config")
+#     def config():
+#         return jsonify({"use_llm": USE_LLM})
 
-    @app.route("/api/episodes")
-    def episodes_search():
-        text = request.args.get("title", "")
-        return jsonify(json_search(text))
+#     @app.route("/api/episodes")
+#     def episodes_search():
+#         text = request.args.get("title", "")
+#         return jsonify(json_search(text))
 
-    if USE_LLM:
-        from llm_routes import register_chat_route
-        register_chat_route(app, json_search)
+#     if USE_LLM:
+#         from llm_routes import register_chat_route
+#         register_chat_route(app, json_search)
