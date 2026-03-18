@@ -27,7 +27,7 @@ def json_search(query):
     matches = []
     for episode, review in results:
         matches.append({
-            'title': episode.title,
+            'title': 'Testing ' + episode.title,
             'descr': episode.descr,
             'imdb_rating': review.imdb_rating
         })
