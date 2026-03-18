@@ -7,6 +7,7 @@ import json
 import os
 from flask import send_from_directory, request, jsonify
 from models import db, Episode, Review
+from search import json_search
 
 # ── AI toggle ────────────────────────────────────────────────────────────────
 USE_LLM = False
@@ -14,22 +15,22 @@ USE_LLM = False
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def json_search(query):
-    if not query or not query.strip():
-        query = "Kardashian"
-    results = db.session.query(Episode, Review).join(
-        Review, Episode.id == Review.id
-    ).filter(
-        Episode.title.ilike(f'%{query}%')
-    ).all()
-    matches = []
-    for episode, review in results:
-        matches.append({
-            'title': episode.title,
-            'descr': episode.descr,
-            'imdb_rating': review.imdb_rating
-        })
-    return matches
+# def json_search(query):
+#     if not query or not query.strip():
+#         query = "Kardashian"
+#     results = db.session.query(Episode, Review).join(
+#         Review, Episode.id == Review.id
+#     ).filter(
+#         Episode.title.ilike(f'%{query}%')
+#     ).all()
+#     matches = []
+#     for episode, review in results:
+#         matches.append({
+#             'title': episode.title,
+#             'descr': episode.descr,
+#             'imdb_rating': review.imdb_rating
+#         })
+#     return matches
 
 
 def register_routes(app):
