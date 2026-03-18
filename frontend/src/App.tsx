@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import SearchIcon from './assets/mag.png'
-import { Episode } from './types'
+import { Pattern } from './types'
 import Chat from './Chat'
 
 function App(): JSX.Element {
   const [useLlm, setUseLlm] = useState<boolean | null>(null)
   const [searchTerm, setSearchTerm] = useState<string>('')
-  const [episodes, setEpisodes] = useState<Episode[]>([])
+  const [patterns, setPatterns] = useState<Pattern[]>([])
 
   useEffect(() => {
     fetch('/api/config').then(r => r.json()).then(data => setUseLlm(data.use_llm))
@@ -15,10 +15,10 @@ function App(): JSX.Element {
 
   const handleSearch = async (value: string): Promise<void> => {
     setSearchTerm(value)
-    if (value.trim() === '') { setEpisodes([]); return }
-    const response = await fetch(`/api/episodes?title=${encodeURIComponent(value)}`)
-    const data: Episode[] = await response.json()
-    setEpisodes(data)
+    if (value.trim() === '') { setPatterns([]); return }
+    const response = await fetch(`/api/patterns?title=${encodeURIComponent(value)}`)
+    const data: Pattern[] = await response.json()
+    setPatterns(data)
   }
 
   if (useLlm === null) return <></>
@@ -37,7 +37,7 @@ function App(): JSX.Element {
           <img src={SearchIcon} alt="search" />
           <input
             id="search-input"
-            placeholder="Search for a Keeping up with the Kardashians episode"
+            placeholder="Search for a crochet pattern..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
           />
@@ -46,11 +46,11 @@ function App(): JSX.Element {
 
       {/* Search results (always shown) */}
       <div id="answer-box">
-        {episodes.map((episode, index) => (
+        {patterns.map((pattern, index) => (
           <div key={index} className="episode-item">
-            <h3 className="episode-title">{episode.title}</h3>
-            <p className="episode-desc">{episode.descr}</p>
-            <p className="episode-rating">IMDB Rating: {episode.imdb_rating}</p>
+            <h3 className="episode-title">{pattern.title}</h3>
+            <p className="episode-desc">{pattern.description}</p>
+            {/* <p className="episode-rating">IMDB Rating: {episode.imdb_rating}</p> */}
           </div>
         ))}
       </div>

@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 from dotenv import load_dotenv
@@ -5,7 +6,7 @@ from flask import Flask
 
 load_dotenv()
 from flask_cors import CORS
-from models import db, Episode, Review
+from models import db, Pattern
 from routes import register_routes
 
 # src/ directory and project root (one level up)
@@ -35,27 +36,24 @@ def init_db():
         db.create_all()
         
         # Initialize database with data from init.json if empty
-        if Episode.query.count() == 0:
-            json_file_path = os.path.join(current_directory, 'init.json')
-            with open(json_file_path, 'r') as file:
-                data = json.load(file)
-                for episode_data in data['episodes']:
-                    episode = Episode(
-                        id=episode_data['id'],
-                        title=episode_data['title'],
-                        descr=episode_data['descr']
+        if Pattern.query.count() == 0:
+            # json_file_path = os.path.join(current_directory, 'init.json')
+            csv_file_path = os.path.join(current_directory, 'all_patterns_combined.csv')
+
+            with open(csv_file_path, newline='', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+
+                for row in reader:
+                    pattern = Pattern(
+                        title=row['title'],
+                        description=row['description'],
+                        skill_level=row['skill_level'],
+                        pattern_link=row['pattern_link']
                     )
-                    db.session.add(episode)
-                
-                for review_data in data['reviews']:
-                    review = Review(
-                        id=review_data['id'],
-                        imdb_rating=review_data['imdb_rating']
-                    )
-                    db.session.add(review)
-            
+                    db.session.add(pattern)
+
             db.session.commit()
-            print("Database initialized with episodes and reviews data")
+            print("Database initialized with pattern data")
 
 init_db()
 
