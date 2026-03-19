@@ -39,20 +39,27 @@ USE_LLM = False
 #     return matches
 
 def json_search(query):
-    if not query or not query.strip():
-        query = "Kardashian"
+    text = request.args.get("title", "")
+    skill = request.args.get("skill", "")
+    query = Pattern.query
 
-    results = Pattern.query.filter(
-        Pattern.title.ilike(f"%{query[:3]}%")
-    ).all()
+    # text search
+    if text:
+        query = query.filter(Pattern.title.ilike(f"%{text[:3]}%"))
+
+    # skill filter
+    if skill:
+        query = query.filter(Pattern.skill_level.ilike(f"%{skill}%"))
+
+    results = query.all()
 
     scored_matches = []
     for pattern in results:
         title = pattern.title or ""
         # description = pattern.description or ""
 
-        title_score = ngram_sim(query, title)
-        word_score = word_overlap_score(query, title)
+        title_score = ngram_sim(text, title)
+        word_score = word_overlap_score(text, title)
 
         score = 0.7 * title_score + 0.3 * word_score
 
