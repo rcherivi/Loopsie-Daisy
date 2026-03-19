@@ -35,9 +35,8 @@ def init_db():
         # Create all tables
         db.create_all()
         
-        # Initialize database with data from init.json if empty
+        # Initialize database with data from "all_patterns_combined.csv" if empty
         if Pattern.query.count() == 0:
-            # json_file_path = os.path.join(current_directory, 'init.json')
             csv_file_path = os.path.join(current_directory, 'all_patterns_combined.csv')
 
             with open(csv_file_path, newline='', encoding='utf-8') as file:
@@ -48,14 +47,20 @@ def init_db():
                         title=row['title'],
                         description=row['description'],
                         skill_level=row['skill_level'],
-                        pattern_link=row['pattern_link']
+                        pattern_link=row['pattern_link'], 
+                        final_description=row['final_description'],
+                        image_path=row['local_path']
                     )
                     db.session.add(pattern)
 
-            db.session.commit()
-            print("Database initialized with pattern data")
+        db.session.commit()
+        print("Database initialized with pattern data")
 
 init_db()
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5001)
+
+
+# if db is not initialized again, run the folling command in terminal to delete the database
+# Remove-Item .\instance\data.db

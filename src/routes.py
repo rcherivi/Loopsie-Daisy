@@ -28,7 +28,9 @@ def json_search(query):
             "title": pattern.title,
             "description": pattern.description,
             "skill_level": pattern.skill_level,
-            "pattern_link": pattern.pattern_link
+            "pattern_link": pattern.pattern_link, 
+            "final_description": pattern.final_description,
+            "image_path": pattern.image_path
         })
     return matches
 
