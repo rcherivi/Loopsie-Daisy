@@ -7,6 +7,10 @@ import json
 import os
 from flask import send_from_directory, request, jsonify
 from models import db, Pattern
+import re
+from collections import Counter
+import math
+from ngram_search import ngram_sim, word_overlap_score
 
 # ── AI toggle ────────────────────────────────────────────────────────────────
 USE_LLM = False
@@ -14,25 +18,58 @@ USE_LLM = False
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+# def json_search(query):
+#     if not query or not query.strip():
+#         query = "Kardashian"
+
+#     results = Pattern.query.filter(
+#         Pattern.title.ilike(f"%{query}%")
+#     ).all()
+
+#     matches = []
+#     for pattern in results:
+#         matches.append({
+#             "title": pattern.title,
+#             "description": pattern.description,
+#             "skill_level": pattern.skill_level,
+#             "pattern_link": pattern.pattern_link, 
+#             "final_description": pattern.final_description,
+#             "image_path": pattern.image_path
+#         })
+#     return matches
+
 def json_search(query):
     if not query or not query.strip():
         query = "Kardashian"
 
     results = Pattern.query.filter(
-        Pattern.title.ilike(f"%{query}%")
+        Pattern.title.ilike(f"%{query[:3]}%")
     ).all()
 
-    matches = []
+    scored_matches = []
     for pattern in results:
-        matches.append({
-            "title": pattern.title,
-            "description": pattern.description,
-            "skill_level": pattern.skill_level,
-            "pattern_link": pattern.pattern_link, 
-            "final_description": pattern.final_description,
-            "image_path": pattern.image_path
-        })
-    return matches
+        title = pattern.title or ""
+        # description = pattern.description or ""
+
+        title_score = ngram_sim(query, title)
+        word_score = word_overlap_score(query, title)
+
+        score = 0.7 * title_score + 0.3 * word_score
+
+        if score > 0:
+            scored_matches.append({
+                'title':  pattern.title,
+                'description': pattern.description,
+                'skill_level': pattern.skill_level,
+                'pattern_link': pattern.pattern_link,
+                "final_description": pattern.final_description,
+                "image_path": pattern.image_path,
+                'score': score
+            })
+            
+    scored_matches.sort(key=lambda x: x['score'], reverse = True)
+
+    return scored_matches[:10]
 
 
 def register_routes(app):

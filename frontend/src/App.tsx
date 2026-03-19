@@ -1,30 +1,37 @@
-import { useState, useEffect } from 'react'
-import './App.css'
-import SearchIcon from './assets/mag.png'
-import { Pattern } from './types'
-import Chat from './Chat'
+import { useState, useEffect } from "react";
+import "./App.css";
+import SearchIcon from "./assets/mag.png";
+import { Pattern } from "./types";
+import Chat from "./Chat";
 
 function App(): JSX.Element {
-  const [useLlm, setUseLlm] = useState<boolean | null>(null)
-  const [searchTerm, setSearchTerm] = useState<string>('')
-  const [patterns, setPatterns] = useState<Pattern[]>([])
+  const [useLlm, setUseLlm] = useState<boolean | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [patterns, setPatterns] = useState<Pattern[]>([]);
 
   useEffect(() => {
-    fetch('/api/config').then(r => r.json()).then(data => setUseLlm(data.use_llm))
-  }, [])
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((data) => setUseLlm(data.use_llm));
+  }, []);
 
   const handleSearch = async (value: string): Promise<void> => {
-    setSearchTerm(value)
-    if (value.trim() === '') { setPatterns([]); return }
-    const response = await fetch(`/api/patterns?title=${encodeURIComponent(value)}`)
-    const data: Pattern[] = await response.json()
-    setPatterns(data)
-  }
+    setSearchTerm(value);
+    if (value.trim() === "") {
+      setPatterns([]);
+      return;
+    }
+    const response = await fetch(
+      `/api/patterns?title=${encodeURIComponent(value)}`,
+    );
+    const data: Pattern[] = await response.json();
+    setPatterns(data);
+  };
 
-  if (useLlm === null) return <></>
+  if (useLlm === null) return <></>;
 
   return (
-    <div className={`full-body-container ${useLlm ? 'llm-mode' : ''}`}>
+    <div className={`full-body-container ${useLlm ? "llm-mode" : ""}`}>
       {/* Search bar (always shown) */}
       <div className="top-text">
         <div className="google-colors">
@@ -33,7 +40,10 @@ function App(): JSX.Element {
           <h1 id="google-0-1">0</h1>
           <h1 id="google-0-2">0</h1>
         </div>
-        <div className="input-box" onClick={() => document.getElementById('search-input')?.focus()}>
+        <div
+          className="input-box"
+          onClick={() => document.getElementById("search-input")?.focus()}
+        >
           <img src={SearchIcon} alt="search" />
           <input
             id="search-input"
@@ -50,6 +60,7 @@ function App(): JSX.Element {
           <div key={index} className="episode-item">
             <h3 className="episode-title">{pattern.title}</h3>
             <p className="episode-desc">{pattern.description}</p>
+            <p className="score">Score: {pattern.score.toFixed(3)}</p>
             {/* <p className="episode-rating">IMDB Rating: {episode.imdb_rating}</p> */}
           </div>
         ))}
@@ -58,7 +69,7 @@ function App(): JSX.Element {
       {/* Chat (only when USE_LLM = True in routes.py) */}
       {useLlm && <Chat onSearchTerm={handleSearch} />}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
