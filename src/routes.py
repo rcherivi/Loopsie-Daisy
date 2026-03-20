@@ -96,6 +96,11 @@ def register_routes(app):
         text = request.args.get("title", "")
         return jsonify(json_search(text))
 
+
+    @app.route('/images/<path:filename>')
+    def get_image(filename):
+        return send_from_directory(filename)
+
     if USE_LLM:
         from llm_routes import register_chat_route
         register_chat_route(app, json_search)
