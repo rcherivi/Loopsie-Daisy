@@ -1,7 +1,7 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from ngram_search import ngram_sim
-from rapidfuzz import fuzz
+# from rapidfuzz import fuzz
 
 
 vectorizer = None
@@ -39,8 +39,8 @@ def word_overlap(query, doc):
   
   return len(q_words & d_words) / len(q_words)
 
-def fuzzy_score(query, doc):
-    return fuzz.token_set_ratio(query, doc) / 100
+# def fuzzy_score(query, doc):
+#     return fuzz.token_set_ratio(query, doc) / 100
   
 def search(query, skill_filter=""):
   global vectorizer, tfidf_matrix, pattern_data
@@ -62,7 +62,7 @@ def search(query, skill_filter=""):
       combined_text = f"{pattern.title} {pattern.description}"
       overlap_score = word_overlap(query, combined_text)
       ngram_score = ngram_sim(query, combined_text)
-      fuzzy_scores = fuzzy_score(query, combined_text)
+      # fuzzy_scores = fuzzy_score(query, combined_text)
 
       final_score = 0.3 * tfidf_score + 0.2 * overlap_score + 0.5 * ngram_score      
       # final_score = 0.5 * tfidf_score + 0.2 * overlap_score + 0.3 * fuzzy_scores
