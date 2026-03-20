@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import SearchIcon from "./assets/mag.png";
+import PageLogo from "./assets/page_logo.svg";
 import { Pattern } from "./types";
 import Chat from "./Chat";
 
 function App(): JSX.Element {
-  const [useLlm, setUseLlm] = useState<boolean | null>(null)
-  const [searchTerm, setSearchTerm] = useState<string>('')
-  const [patterns, setPatterns] = useState<Pattern[]>([])
-  const [skillFilter, setSkillFilter] = useState<string>('')
+  const [useLlm, setUseLlm] = useState<boolean | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [patterns, setPatterns] = useState<Pattern[]>([]);
+  const [skillFilter, setSkillFilter] = useState<string>("");
 
   useEffect(() => {
     fetch("/api/config")
@@ -17,23 +18,26 @@ function App(): JSX.Element {
   }, []);
 
   const fetchPatterns = async (text: string, skill: string) => {
-    const params = new URLSearchParams()
+    const params = new URLSearchParams();
     if (text.trim() !== "") {
-      params.append("title", text)
+      params.append("title", text);
     }
     if (skill.trim() !== "") {
-      params.append("skill", skill)
+      params.append("skill", skill);
     }
-    const response = await fetch(`/api/patterns?${params.toString()}`)
-    const data = await response.json()
-    setPatterns(data)
-  }
+    const response = await fetch(`/api/patterns?${params.toString()}`);
+    const data = await response.json();
+    setPatterns(data);
+  };
 
   const handleSearch = async (value: string): Promise<void> => {
-    setSearchTerm(value)
-    if (value.trim() === '') { setPatterns([]); return }
-    fetchPatterns(value, skillFilter)
-  }
+    setSearchTerm(value);
+    if (value.trim() === "") {
+      setPatterns([]);
+      return;
+    }
+    fetchPatterns(value, skillFilter);
+  };
 
   if (useLlm === null) return <></>;
 
@@ -41,12 +45,7 @@ function App(): JSX.Element {
     <div className={`full-body-container ${useLlm ? "llm-mode" : ""}`}>
       {/* Search bar (always shown) */}
       <div className="top-text">
-        <div className="google-colors">
-          <h1 id="google-4">4</h1>
-          <h1 id="google-3">3</h1>
-          <h1 id="google-0-1">0</h1>
-          <h1 id="google-0-2">0</h1>
-        </div>
+        <img src={PageLogo} alt="loopsie daisy" className="header-image" />
         <div
           className="input-box"
           onClick={() => document.getElementById("search-input")?.focus()}
@@ -68,9 +67,9 @@ function App(): JSX.Element {
           id="skill-select"
           value={skillFilter}
           onChange={(e) => {
-            const newSkill = e.target.value
-            setSkillFilter(newSkill)
-            fetchPatterns(searchTerm, newSkill) // re-run search with new skill filter
+            const newSkill = e.target.value;
+            setSkillFilter(newSkill);
+            fetchPatterns(searchTerm, newSkill); // re-run search with new skill filter
           }}
         >
           <option value="">All levels</option>
