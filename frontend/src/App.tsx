@@ -84,11 +84,41 @@ function App(): JSX.Element {
       <div id="answer-box">
         {patterns.map((pattern, index) => (
           <div key={index} className="episode-item">
-            <h3 className="episode-title">{pattern.title}</h3>
-            <p className="episode-rating">Skill Level: {pattern.skill_level}</p>
-            <p className="episode-desc">{pattern.description}</p>
-            <p className="score">Score: {pattern.score.toFixed(3)}</p>
+            <img
+              src={
+                new URL(
+                  `./assets/images/${pattern.image_path}`,
+                  import.meta.url,
+                ).href
+              }
+              alt={pattern.title}
+              className="episode-image"
+            />
+            <div className="episode-content">
+              <h3 className="episode-title">{pattern.title}</h3>
+              <p className="episode-rating">
+                Skill Level: {pattern.skill_level}
+              </p>
+              <div className="episode-desc"> {pattern.description} </div>
+              <a
+                className="pattern-link"
+                href={pattern.pattern_link}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {" "}
+                Pattern Link
+              </a>
+              <p className="score">Score: {pattern.score.toFixed(3)}</p>
+            </div>
           </div>
+          // <div key={index} className="episode-item">
+          //   <h3 className="episode-title">{pattern.title}</h3>
+          //   <p className="episode-rating">Skill Level: {pattern.skill_level}</p>
+          //   <p className="episode-desc">{pattern.description}</p>
+          //   <a className="pattern-link" href={pattern.pattern_link}>Pattern Link</a>
+          //   <p className="score">Score: {pattern.score.toFixed(3)}</p>
+          // </div>
         ))}
       </div>
 
