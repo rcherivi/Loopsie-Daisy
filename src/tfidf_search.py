@@ -68,13 +68,8 @@ def search(query, skill_filter=""):
       # final_score = 0.5 * tfidf_score + 0.2 * overlap_score + 0.3 * fuzzy_scores
 
       results.append({
-        "title": pattern.title,
-        "description": pattern.description,
-        "skill_level": pattern.skill_level,
-        "pattern_link": pattern.pattern_link,
-        "final_description": pattern.final_description,
-        "image_path": pattern.image_path,
-        "score": float(final_score)
+        "pattern_obj" : pattern,
+        "score": final_score
       })
 
   results.sort(key = lambda x: x["score"], reverse=True)

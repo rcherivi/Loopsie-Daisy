@@ -81,10 +81,25 @@ USE_LLM = False
 #     return scored_matches[:10]
 
 def json_search(_):
-    text = request.args.get("title", "")
+    query = request.args.get("title", "")
     skill = request.args.get("skill", "")
 
-    return search(text, skill)
+    raw_results = search(query, skill)
+
+    formatted_results = []
+    for item in raw_results:
+        p = item["pattern_obj"]
+        formatted_results.append({
+            "title": p.title,
+            "description": p.description,
+            "skill_level": p.skill_level,
+            "pattern_link": p.pattern_link,
+            "final_description": p.final_description,
+            "image_path": p.image_path,
+            "score": float(item["score"])
+        })
+
+    return formatted_results
 
 def register_routes(app):
     @app.before_first_request
@@ -108,7 +123,7 @@ def register_routes(app):
     def patterns_search():
         # text = request.args.get("title", "")
         # return jsonify(json_search(text))
-        return jsonify(json_search(""))
+        return jsonify(json_search(None))
 
 
     @app.route('/images/<path:filename>')
