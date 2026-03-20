@@ -7,29 +7,76 @@ import json
 import os
 from flask import send_from_directory, request, jsonify
 from models import db, Pattern
-#from models import db, Episode, Review
+import re
+from collections import Counter
+import math
+from ngram_search import ngram_sim, word_overlap_score
 
 # ── AI toggle ────────────────────────────────────────────────────────────────
 USE_LLM = False
 # USE_LLM = True
 # ─────────────────────────────────────────────────────────────────────────────
 
+
+# def json_search(query):
+#     if not query or not query.strip():
+#         query = "Kardashian"
+
+#     results = Pattern.query.filter(
+#         Pattern.title.ilike(f"%{query}%")
+#     ).all()
+
+#     matches = []
+#     for pattern in results:
+#         matches.append({
+#             "title": pattern.title,
+#             "description": pattern.description,
+#             "skill_level": pattern.skill_level,
+#             "pattern_link": pattern.pattern_link, 
+#             "final_description": pattern.final_description,
+#             "image_path": pattern.image_path
+#         })
+#     return matches
+
 def json_search(query):
-    if not query or not query.strip():
-        query = "crochet"
-    # match given to full description (title, description, etc.)
-    results = db.session.query(Pattern).filter(
-        Pattern.full_description.ilike(f"%{query}%")).all()
-    matches = []
+    text = request.args.get("title", "")
+    skill = request.args.get("skill", "")
+    query = Pattern.query
+
+    # text search
+    if text:
+        query = query.filter(Pattern.title.ilike(f"%{text[:3]}%"))
+
+    # skill filter
+    if skill:
+        query = query.filter(Pattern.skill_level.ilike(f"%{skill}%"))
+
+    results = query.all()
+
+    scored_matches = []
     for pattern in results:
-        matches.append({
-            'title': pattern.title,
-            'descr': pattern.descr,
-            'skill_level': pattern.skill_level,
-            'pattern_link': pattern.pattern_link,
-            'image_path': pattern.image_path
-        })
-    return matches
+        title = pattern.title or ""
+        # description = pattern.description or ""
+
+        title_score = ngram_sim(text, title)
+        word_score = word_overlap_score(text, title)
+
+        score = 0.7 * title_score + 0.3 * word_score
+
+        if score > 0:
+            scored_matches.append({
+                'title':  pattern.title,
+                'description': pattern.description,
+                'skill_level': pattern.skill_level,
+                'pattern_link': pattern.pattern_link,
+                "final_description": pattern.final_description,
+                "image_path": pattern.image_path,
+                'score': score
+            })
+            
+    scored_matches.sort(key=lambda x: x['score'], reverse = True)
+
+    return scored_matches[:10]
 
 def register_routes(app):
     @app.route('/', defaults={'path': ''})
@@ -45,7 +92,7 @@ def register_routes(app):
         return jsonify({"use_llm": USE_LLM})
 
     @app.route("/api/patterns")
-    def pattern_search():
+    def patterns_search():
         text = request.args.get("title", "")
         return jsonify(json_search(text))
 

@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import SearchIcon from "./assets/mag.png";
+import PageLogo from "./assets/page_logo.svg";
 import { Pattern } from "./types";
-// import { Episode } from './types'
 import Chat from "./Chat";
 
 function App(): JSX.Element {
   const [useLlm, setUseLlm] = useState<boolean | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [patterns, setPattern] = useState<Pattern[]>([]);
+  const [patterns, setPatterns] = useState<Pattern[]>([]);
+  const [skillFilter, setSkillFilter] = useState<string>("");
 
   useEffect(() => {
     fetch("/api/config")
@@ -16,17 +17,26 @@ function App(): JSX.Element {
       .then((data) => setUseLlm(data.use_llm));
   }, []);
 
+  const fetchPatterns = async (text: string, skill: string) => {
+    const params = new URLSearchParams();
+    if (text.trim() !== "") {
+      params.append("title", text);
+    }
+    if (skill.trim() !== "") {
+      params.append("skill", skill);
+    }
+    const response = await fetch(`/api/patterns?${params.toString()}`);
+    const data = await response.json();
+    setPatterns(data);
+  };
+
   const handleSearch = async (value: string): Promise<void> => {
     setSearchTerm(value);
     if (value.trim() === "") {
-      setPattern([]);
+      setPatterns([]);
       return;
     }
-    const response = await fetch(
-      `/api/episodes?title=${encodeURIComponent(value)}`,
-    );
-    const data: Pattern[] = await response.json();
-    setPattern(data);
+    fetchPatterns(value, skillFilter);
   };
 
   if (useLlm === null) return <></>;
@@ -35,12 +45,7 @@ function App(): JSX.Element {
     <div className={`full-body-container ${useLlm ? "llm-mode" : ""}`}>
       {/* Search bar (always shown) */}
       <div className="top-text">
-        <div className="google-colors">
-          <h1 id="google-4">4</h1>
-          <h1 id="google-3">3</h1>
-          <h1 id="google-0-1">0</h1>
-          <h1 id="google-0-2">0</h1>
-        </div>
+        <img src={PageLogo} alt="loopsie daisy" className="header-image" />
         <div
           className="input-box"
           onClick={() => document.getElementById("search-input")?.focus()}
@@ -48,28 +53,41 @@ function App(): JSX.Element {
           <img src={SearchIcon} alt="search" />
           <input
             id="search-input"
-            placeholder="Search for a easy crochet pattern for a cozy gift"
+            placeholder="Search for a crochet pattern..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
           />
         </div>
       </div>
 
+      {/* Skill filter */}
+      <div>
+        <label htmlFor="skill-select">Filter by skill level: </label>
+        <select
+          id="skill-select"
+          value={skillFilter}
+          onChange={(e) => {
+            const newSkill = e.target.value;
+            setSkillFilter(newSkill);
+            fetchPatterns(searchTerm, newSkill); // re-run search with new skill filter
+          }}
+        >
+          <option value="">All levels</option>
+          <option value="Easy">Easy</option>
+          <option value="Beginner">Beginner</option>
+          <option value="Intermediate">Intermediate</option>
+          <option value="Advanced">Advanced</option>
+        </select>
+      </div>
+
       {/* Search results (always shown) */}
       <div id="answer-box">
         {patterns.map((pattern, index) => (
-          <div key={index} className="pattern-item">
-            <h3 className="pattern-title">{pattern.title}</h3>
-            <p className="pattern-desc">{pattern.descr}</p>
-            <p className="pattern-skill-level">
-              Skill Level: {pattern.skill_level}
-            </p>
-            <a className="pattern-link">Pattern Link: {pattern.pattern_link}</a>
-            <img
-              className="pattern-image"
-              src={pattern.image_path}
-              alt={pattern.title}
-            />
+          <div key={index} className="episode-item">
+            <h3 className="episode-title">{pattern.title}</h3>
+            <p className="episode-rating">Skill Level: {pattern.skill_level}</p>
+            <p className="episode-desc">{pattern.description}</p>
+            <p className="score">Score: {pattern.score.toFixed(3)}</p>
           </div>
         ))}
       </div>

@@ -1,15 +1,9 @@
 export interface Pattern {
-  id: string;
   title: string;
-  descr: string;
-  full_description: string;
-  pattern_link: string;
+  description: string;
   skill_level: string;
+  pattern_link: string;
+  final_description: string;
   image_path: string;
+  score: number;
 }
-
-// export interface Episode {
-//   title: string;
-//   descr: string;
-//   imdb_rating: number;
-// }
