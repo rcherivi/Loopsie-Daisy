@@ -11,6 +11,7 @@ import re
 from collections import Counter
 import math
 from ngram_search import ngram_sim, word_overlap_score
+from tfidf_search import build_index, search
 
 # ── AI toggle ────────────────────────────────────────────────────────────────
 USE_LLM = False
@@ -38,48 +39,59 @@ USE_LLM = False
 #         })
 #     return matches
 
-def json_search(query):
+# def json_search(query):
+#     text = request.args.get("title", "")
+#     skill = request.args.get("skill", "")
+#     query = Pattern.query
+
+#     # text search
+#     if text:
+#         query = query.filter(Pattern.title.ilike(f"%{text[:3]}%"))
+
+#     # skill filter
+#     if skill:
+#         query = query.filter(Pattern.skill_level.ilike(f"%{skill}%"))
+
+#     results = query.all()
+
+#     scored_matches = []
+#     for pattern in results:
+#         title = pattern.title or ""
+#         description = pattern.description or ""
+
+#         title_score = ngram_sim(text, title)
+#         word_score = word_overlap_score(text, title)
+#         description_score = ngram_sim(text, description)
+
+#         score = 0.6 * title_score + 0.1 * word_score + 0.3 * description_score
+ 
+#         if score > 0:
+#             scored_matches.append({
+#                 'title':  pattern.title,
+#                 'description': pattern.description,
+#                 'skill_level': pattern.skill_level,
+#                 'pattern_link': pattern.pattern_link,
+#                 "final_description": pattern.final_description,
+#                 "image_path": pattern.image_path,
+#                 'score': score
+#             })
+            
+#     scored_matches.sort(key=lambda x: x['score'], reverse = True)
+
+#     return scored_matches[:10]
+
+def json_search(_):
     text = request.args.get("title", "")
     skill = request.args.get("skill", "")
-    query = Pattern.query
 
-    # text search
-    if text:
-        query = query.filter(Pattern.title.ilike(f"%{text[:3]}%"))
-
-    # skill filter
-    if skill:
-        query = query.filter(Pattern.skill_level.ilike(f"%{skill}%"))
-
-    results = query.all()
-
-    scored_matches = []
-    for pattern in results:
-        title = pattern.title or ""
-        description = pattern.description or ""
-
-        title_score = ngram_sim(text, title)
-        word_score = word_overlap_score(text, title)
-        description_score = ngram_sim(text, description)
-
-        score = 0.6 * title_score + 0.1 * word_score + 0.3 * description_score
- 
-        if score > 0:
-            scored_matches.append({
-                'title':  pattern.title,
-                'description': pattern.description,
-                'skill_level': pattern.skill_level,
-                'pattern_link': pattern.pattern_link,
-                "final_description": pattern.final_description,
-                "image_path": pattern.image_path,
-                'score': score
-            })
-            
-    scored_matches.sort(key=lambda x: x['score'], reverse = True)
-
-    return scored_matches[:10]
+    return search(text, skill)
 
 def register_routes(app):
+    @app.before_first_request
+    def initialize():
+        patterns = Pattern.query.all()
+        build_index(patterns)
+
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve(path):
@@ -94,8 +106,9 @@ def register_routes(app):
 
     @app.route("/api/patterns")
     def patterns_search():
-        text = request.args.get("title", "")
-        return jsonify(json_search(text))
+        # text = request.args.get("title", "")
+        # return jsonify(json_search(text))
+        return jsonify(json_search(""))
 
 
     @app.route('/images/<path:filename>')
