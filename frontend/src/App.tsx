@@ -85,7 +85,12 @@ function App(): JSX.Element {
         {patterns.map((pattern, index) => (
           <div key={index} className="episode-item">
             <img
-              src={`http://localhost:5173/images/${pattern.image_path}`}
+              src={
+                new URL(
+                  `./assets/images/${pattern.image_path}`,
+                  import.meta.url,
+                ).href
+              }
               alt={pattern.title}
               className="episode-image"
             />
