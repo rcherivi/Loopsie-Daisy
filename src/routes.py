@@ -56,13 +56,14 @@ def json_search(query):
     scored_matches = []
     for pattern in results:
         title = pattern.title or ""
-        # description = pattern.description or ""
+        description = pattern.description or ""
 
         title_score = ngram_sim(text, title)
         word_score = word_overlap_score(text, title)
+        description_score = ngram_sim(text, description)
 
-        score = 0.7 * title_score + 0.3 * word_score
-
+        score = 0.6 * title_score + 0.1 * word_score + 0.3 * description_score
+ 
         if score > 0:
             scored_matches.append({
                 'title':  pattern.title,
