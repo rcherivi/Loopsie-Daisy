@@ -85,7 +85,7 @@ function App(): JSX.Element {
         {patterns.map((pattern, index) => (
           <div key={index} className="episode-item">
             <img
-              src={`http://localhost:5174/images/${pattern.image_path}`}
+              src={`http://localhost:5173/images/${pattern.image_path}`}
               alt={pattern.title}
               className="episode-image"
             />
