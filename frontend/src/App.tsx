@@ -73,7 +73,6 @@ function App(): JSX.Element {
           }}
         >
           <option value="">All levels</option>
-          <option value="Easy">Easy</option>
           <option value="Beginner">Beginner</option>
           <option value="Intermediate">Intermediate</option>
           <option value="Advanced">Advanced</option>
