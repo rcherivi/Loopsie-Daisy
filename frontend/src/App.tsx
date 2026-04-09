@@ -250,17 +250,14 @@ function App(): JSX.Element {
           <aside className="filter-sidebar">
             {/* yellow header */}
             <div className="filter-header">
-              <DaisySVG size={26} yellowCenter={true} />
+              {/* <DaisySVG size={26} yellowCenter={true} /> */}
               Filter by:
             </div>
 
             <div className="filter-body">
               {/* skill level */}
               <div className="filter-section">
-                <p className="filter-section-title">
-                  <DaisySVG size={18} yellowCenter={true} />
-                  Skill Level
-                </p>
+                <p className="filter-section-title"> Skill Level</p>
                 {SKILLS.map((s) => (
                   <label
                     key={s}
