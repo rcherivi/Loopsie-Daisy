@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <style>
+    .petal { fill: #fdfae0; fill-opacity: 0.8; stroke: #cbb49f; stroke-width: 1.5; stroke-linecap: round; filter: url(#messy); }
+    .center { fill: #fdd835; fill-opacity: 0.9; stroke: #cbb49f; stroke-width: 1.5; filter: url(#messy); }
+    .leaf { fill: #d1e5ca; fill-opacity: 0.8; stroke: #cbb49f; stroke-width: 1.2; filter: url(#messy); }
+  </style>
+  <defs>
+    <filter id="messy" x="-50%" y="-50%" width="200%" height="200%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" seed="1" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </defs>
+
+  <g transform="translate(60, 60) rotate(15)">
+    <circle class="petal" cx="0" cy="0" r="28" />
+    <path class="petal" d="M0,0 C-10,-25 10,-25 0,0 M0,0 C-25,-10 -25,10 0,0 M0,0 C10,25 -10,25 0,0 M0,0 C25,10 25,-10 0,0" />
+    <path class="petal" d="M0,0 C18,-18 20,-10 0,0 M0,0 C-18,-18 -10,-20 0,0 M0,0 C-18,18 -20,10 0,0 M0,0 C18,18 10,20 0,0" />
+    <circle class="center" cx="0" cy="0" r="8" />
+  </g>
+
+  <g transform="translate(230, 90) rotate(-10) scale(1.1)">
+    <circle class="petal" cx="0" cy="0" r="25" />
+    <path class="leaf" d="M-10,0 C-15,10 -15,-10 -10,0" />
+    <circle class="center" cx="0" cy="0" r="7" />
+  </g>
+
+  <g transform="translate(150, 240) rotate(35) scale(0.8)">
+    <circle class="petal" cx="0" cy="0" r="22" />
+    <path class="petal" d="M0,0 C-10,-20 10,-20 0,0 M0,0 C20,10 20,-10 0,0" />
+    <circle class="center" cx="0" cy="0" r="6" />
+  </g>
+</svg>

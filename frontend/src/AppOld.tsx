@@ -1,9 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
+import PageLogo from "./assets/page_logo.svg";
 import { Pattern } from "./types";
 import Chat from "./Chat";
 import LoadingScreen from "./LoadingScreen";
 import LandingPage from "./LandingPage";
+
+/* ─────────────────────────────────────────
+   SVG helpers
+───────────────────────────────────────── */
 
 function DaisySVG({
   size = 28,
@@ -110,6 +115,10 @@ function HeartSVG() {
   );
 }
 
+/* ─────────────────────────────────────────
+   Main App
+───────────────────────────────────────── */
+
 const SKILLS = ["", "Beginner", "Intermediate", "Advanced"];
 
 function App(): JSX.Element {
@@ -203,11 +212,16 @@ function App(): JSX.Element {
     <div className="full-body-container">
       {isSearching && <LoadingScreen progress={searchProgress} />}
 
-      {/* main body */}
+      {/* ══ WHITE HEADER ══ */}
+      <div className="app-header">
+        <img src={PageLogo} alt="Loopsie Daisy" className="app-logo-img" />
+      </div>
+
+      {/* ══ MAIN ══ */}
       <div className="app-main">
         <h1 className="app-headline">What do you want to stitch today?</h1>
 
-        {/* search bar */}
+        {/* search */}
         <div className="search-wrap">
           <div className="search-row">
             <div className="input-box">
@@ -226,7 +240,7 @@ function App(): JSX.Element {
               </svg>
               <input
                 ref={inputRef}
-                placeholder="Find your next project...   e.g., Easy Red Scarf"
+                placeholder="Find your next project... e.g., Beginner Chunky Blanket Free"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && triggerSearch()}
@@ -245,8 +259,9 @@ function App(): JSX.Element {
           </button>
         )}
 
-        {/* filter sidebar */}
+        {/* ══ SIDEBAR + GRID ══ */}
         <div className="app-body">
+          {/* ── FILTER SIDEBAR ── */}
           <aside className="filter-sidebar">
             {/* yellow header */}
             <div className="filter-header">
@@ -280,19 +295,19 @@ function App(): JSX.Element {
             </div>
           </aside>
 
-          {/* cards */}
+          {/* ── CARD GRID ── */}
           <div className="card-grid-wrap">
             {hasSearched && (
               <div className="card-grid-label">Pattern Cards</div>
             )}
 
             <div className="card-grid">
-              {/* {!hasSearched && (
+              {!hasSearched && (
                 <div className="empty-hint">
                   <DaisySVG size={52} />
                   <p>type something and hit search!</p>
                 </div>
-              )} */}
+              )}
 
               {hasSearched && patterns.length === 0 && !isSearching && (
                 <div className="empty-hint">
@@ -314,52 +329,31 @@ function App(): JSX.Element {
                       }
                       alt={p.title}
                     />
-                    {/* <div className="card-overlay">
-                      <p className="overlay-desc">
-                        {p.description || "Cute crochet pattern"}
-                      </p>
-
-                      <div className="overlay-info">
-                        <span>{p.skill_level || "No Level"}</span>
-                        <span>{(p.score * 100).toFixed(0)}% match</span>
-                      </div>
-                    </div> */}
-                    <div className="card-overlay">
-                      <p className="overlay-description">{p.description}</p>
-
-                      <a
-                        className="overlay-link"
-                        href={p.pattern_link}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        View Pattern
-                      </a>
-                    </div>
+                    <span className="card-badge card-badge--free">Free</span>
                   </div>
 
                   {/* body */}
                   <div className="card-body">
                     <h3 className="card-title">{p.title}</h3>
                     <div className="card-meta">
-                      <span className="card-star"></span>
-                      match: {(p.score * 100).toFixed(0)}%
+                      <span className="card-star">★</span>
+                      5.0 &nbsp;·&nbsp; match: {(p.score * 100).toFixed(0)}%
                     </div>
-                    {/* <span className="card-badge">{p.skill_level}</span> */}
-                    <span className="card-badge">
-                      {p.skill_level ? p.skill_level : "No Level"}
-                    </span>
+                    <div className="card-footer">
+                      <span className="card-skill">{p.skill_level}</span>
+                      <HeartSVG />
+                    </div>
                   </div>
 
-                  {/* view pattern */}
-                  {/* <a
+                  {/* yellow "View Pattern" button at card bottom */}
+                  <a
                     className="card-link"
                     href={p.pattern_link}
                     target="_blank"
                     rel="noreferrer"
                   >
                     View Pattern ✦
-                  </a> */}
+                  </a>
                 </div>
               ))}
             </div>
@@ -367,69 +361,7 @@ function App(): JSX.Element {
         </div>
       </div>
 
-      {/* Skill filter */}
-      <div>
-        <label htmlFor="skill-select">Filter by skill level: </label>
-        <select
-          id="skill-select"
-          value={skillFilter}
-          onChange={(e) => {
-            const newSkill = e.target.value;
-            setSkillFilter(newSkill);
-            fetchPatterns(searchTerm, newSkill); // re-run search with new skill filter
-          }}
-        >
-          <option value="">All levels</option>
-          <option value="Beginner">Beginner</option>
-          <option value="Intermediate">Intermediate</option>
-          <option value="Advanced">Advanced</option>
-        </select>
-      </div>
-
-      {/* Search results (always shown) */}
-      <div id="answer-box">
-        {patterns.map((pattern, index) => (
-          <div key={index} className="episode-item">
-            <img
-              src={
-                new URL(
-                  `./assets/images/${pattern.image_path}`,
-                  import.meta.url,
-                ).href
-              }
-              alt={pattern.title}
-              className="episode-image"
-            />
-            <div className="episode-content">
-              <h3 className="episode-title">{pattern.title}</h3>
-              <p className="episode-rating">
-                Skill Level: {pattern.skill_level}
-              </p>
-              <div className="episode-desc"> {pattern.description} </div>
-              <a
-                className="pattern-link"
-                href={pattern.pattern_link}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {" "}
-                Pattern Link
-              </a>
-              <p className="score">Score: {pattern.score.toFixed(3)}</p>
-            </div>
-          </div>
-          // <div key={index} className="episode-item">
-          //   <h3 className="episode-title">{pattern.title}</h3>
-          //   <p className="episode-rating">Skill Level: {pattern.skill_level}</p>
-          //   <p className="episode-desc">{pattern.description}</p>
-          //   <a className="pattern-link" href={pattern.pattern_link}>Pattern Link</a>
-          //   <p className="score">Score: {pattern.score.toFixed(3)}</p>
-          // </div>
-        ))}
-      </div>
-
-      {/* Chat (only when USE_LLM = True in routes.py) */}
-      {useLlm && <Chat onSearchTerm={handleSearch} />}
+      {useLlm && <Chat onSearchTerm={handleChatSearch} />}
     </div>
   );
 }
