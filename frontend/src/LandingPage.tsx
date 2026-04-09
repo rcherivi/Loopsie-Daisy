@@ -8,7 +8,7 @@ interface Props {
 const LandingPage: React.FC<Props> = ({ onEnter }) => {
   return (
     <div className="lp-root">
-      {/* scattered background daisies */}
+      {/* background daisies */}
       <div className="lp-bg-daisies" aria-hidden="true">
         {[
           { top: "6%", left: "3%", size: 70, rot: -15 },
@@ -69,7 +69,7 @@ const LandingPage: React.FC<Props> = ({ onEnter }) => {
           className="lp-logo"
         />
 
-        {/* tiny sparkle daisies around the logo */}
+        {/* sparkles */}
         <div className="lp-sparkles" aria-hidden="true">
           <span className="lp-spark lp-spark--1">✦</span>
           <span className="lp-spark lp-spark--2">✦</span>

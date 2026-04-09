@@ -58,7 +58,7 @@
   line-height: 1.2;
 }
 
-/* ── flowers ───────────────────────────────────────── */
+/* flowers */
 .flower-visual-row {
   display: flex;
   gap: 18px;
@@ -133,7 +133,7 @@
   height: 60px;
 }
 
-/* ── progress bar ──────────────────────────────────── */
+/* progress */
 .segmented-bar-row {
   display: flex;
   gap: 7px;

@@ -1,6 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Nothing+You+Could+Do&display=swap");
 
-/* ── root: full viewport, sage-green bg image ──────── */
+/* background */
 .lp-root {
   min-height: 100vh;
   width: 100%;
@@ -15,7 +15,7 @@
   overflow: hidden;
 }
 
-/* ── scattered bg daisies ──────────────────────────── */
+/* daisies */
 .lp-bg-daisies {
   position: absolute;
   inset: 0;
@@ -52,7 +52,7 @@
   }
 }
 
-/* ── hero center ───────────────────────────────────── */
+/* center hero */
 .lp-hero {
   position: relative;
   z-index: 1;
@@ -94,7 +94,7 @@
   mask-position: center;
 } */
 
-/* ── logo ──────────────────────────────────────────── */
+/* logo  */
 .lp-logo {
   width: 100%;
   max-width: 1000px;
@@ -103,7 +103,7 @@
   filter: drop-shadow(0 2px 8px rgba(60, 100, 60, 0.18));
 }
 
-/* ── tiny sparkles ─────────────────────────────────── */
+/* sparkles */
 .lp-sparkles {
   position: absolute;
   inset: 0;
@@ -158,7 +158,7 @@
   }
 }
 
-/* ── enter button — matches screenshot pill style ──── */
+/* button */
 .lp-btn {
   background: rgba(255, 255, 255, 0.82);
   border: 1.5px solid rgba(180, 200, 180, 0.7);
