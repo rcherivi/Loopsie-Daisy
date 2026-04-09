@@ -1,14 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
-import PageLogo from "./assets/page_logo.svg";
 import { Pattern } from "./types";
 import Chat from "./Chat";
 import LoadingScreen from "./LoadingScreen";
 import LandingPage from "./LandingPage";
-
-/* ─────────────────────────────────────────
-   SVG helpers
-───────────────────────────────────────── */
 
 function DaisySVG({
   size = 28,
@@ -115,11 +110,8 @@ function HeartSVG() {
   );
 }
 
-/* ─────────────────────────────────────────
-   Main App
-───────────────────────────────────────── */
-
 const SKILLS = ["", "Beginner", "Intermediate", "Advanced"];
+const PAGE_SIZE = 6;
 
 function App(): JSX.Element {
   const [showLanding, setShowLanding] = useState(true);
@@ -131,6 +123,10 @@ function App(): JSX.Element {
   const [isSearching, setIsSearching] = useState(false);
   const [searchProgress, setSearchProgress] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -158,6 +154,7 @@ function App(): JSX.Element {
     }
     setPatterns([]);
     setIsSearching(true);
+    setCurrentPage(1);
     runProgressSteps();
     const params = new URLSearchParams();
     if (text.trim()) params.append("title", text);
@@ -174,6 +171,21 @@ function App(): JSX.Element {
         setSearchProgress(0);
       }, 2500);
     }
+  };
+
+    const handleSkillFilter = (skill: string) => {
+    setSkillFilter(skill);
+    setCurrentPage(1);
+    // If no search has happened yet, nothing to do
+    if (!hasSearched) return;
+    // Re-fetch silently (no loading screen)
+    const params = new URLSearchParams();
+    if (searchTerm.trim()) params.append("title", searchTerm);
+    if (skill.trim()) params.append("skill", skill);
+    fetch(`/api/patterns?${params.toString()}`)
+      .then((r) => r.json())
+      .then((data) => setPatterns(data))
+      .catch((e) => console.error(e));
   };
 
   const triggerSearch = () => {
@@ -205,6 +217,16 @@ function App(): JSX.Element {
     fetchPatterns(term, skillFilter);
   };
 
+  const totalPages = Math.ceil(patterns.length / PAGE_SIZE);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageEnd = pageStart + PAGE_SIZE;
+  const visibleCards = patterns.slice(pageStart, pageEnd);
+
+  const goToPage = (p: number) => {
+    setCurrentPage(p);
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   if (showLanding) return <LandingPage onEnter={() => setShowLanding(false)} />;
   if (useLlm === null) return <></>;
 
@@ -212,16 +234,11 @@ function App(): JSX.Element {
     <div className="full-body-container">
       {isSearching && <LoadingScreen progress={searchProgress} />}
 
-      {/* ══ WHITE HEADER ══ */}
-      <div className="app-header">
-        <img src={PageLogo} alt="Loopsie Daisy" className="app-logo-img" />
-      </div>
-
-      {/* ══ MAIN ══ */}
+      {/* main body */}
       <div className="app-main">
         <h1 className="app-headline">What do you want to stitch today?</h1>
 
-        {/* search */}
+        {/* search bar */}
         <div className="search-wrap">
           <div className="search-row">
             <div className="input-box">
@@ -240,7 +257,7 @@ function App(): JSX.Element {
               </svg>
               <input
                 ref={inputRef}
-                placeholder="Find your next project... e.g., Beginner Chunky Blanket Free"
+                placeholder="Find your next project...   e.g., Easy Red Scarf"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && triggerSearch()}
@@ -259,23 +276,19 @@ function App(): JSX.Element {
           </button>
         )}
 
-        {/* ══ SIDEBAR + GRID ══ */}
+        {/* filter sidebar */}
         <div className="app-body">
-          {/* ── FILTER SIDEBAR ── */}
           <aside className="filter-sidebar">
             {/* yellow header */}
             <div className="filter-header">
-              <DaisySVG size={26} yellowCenter={true} />
+              {/* <DaisySVG size={26} yellowCenter={true} /> */}
               Filter by:
             </div>
 
             <div className="filter-body">
               {/* skill level */}
               <div className="filter-section">
-                <p className="filter-section-title">
-                  <DaisySVG size={18} yellowCenter={true} />
-                  Skill Level
-                </p>
+                <p className="filter-section-title"> Skill Level</p>
                 {SKILLS.map((s) => (
                   <label
                     key={s}
@@ -295,19 +308,19 @@ function App(): JSX.Element {
             </div>
           </aside>
 
-          {/* ── CARD GRID ── */}
+          {/* cards */}
           <div className="card-grid-wrap">
             {hasSearched && (
               <div className="card-grid-label">Pattern Cards</div>
             )}
 
             <div className="card-grid">
-              {!hasSearched && (
+              {/* {!hasSearched && (
                 <div className="empty-hint">
                   <DaisySVG size={52} />
                   <p>type something and hit search!</p>
                 </div>
-              )}
+              )} */}
 
               {hasSearched && patterns.length === 0 && !isSearching && (
                 <div className="empty-hint">
@@ -329,34 +342,89 @@ function App(): JSX.Element {
                       }
                       alt={p.title}
                     />
-                    <span className="card-badge card-badge--free">Free</span>
+                    {/* <div className="card-overlay">
+                      <p className="overlay-desc">
+                        {p.description || "Cute crochet pattern"}
+                      </p>
+
+                      <div className="overlay-info">
+                        <span>{p.skill_level || "No Level"}</span>
+                        <span>{(p.score * 100).toFixed(0)}% match</span>
+                      </div>
+                    </div> */}
+                    <div className="card-overlay">
+                      <p className="overlay-description">{p.description}</p>
+
+                      <a
+                        className="overlay-link"
+                        href={p.pattern_link}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View Pattern
+                      </a>
+                    </div>
                   </div>
 
                   {/* body */}
                   <div className="card-body">
                     <h3 className="card-title">{p.title}</h3>
                     <div className="card-meta">
-                      <span className="card-star">★</span>
-                      5.0 &nbsp;·&nbsp; match: {(p.score * 100).toFixed(0)}%
+                      <span className="card-star"></span>
+                      match: {(p.score * 100).toFixed(0)}%
                     </div>
-                    <div className="card-footer">
-                      <span className="card-skill">{p.skill_level}</span>
-                      <HeartSVG />
-                    </div>
+                    {/* <span className="card-badge">{p.skill_level}</span> */}
+                    <span className="card-badge">
+                      {p.skill_level ? p.skill_level : "No Level"}
+                    </span>
                   </div>
 
-                  {/* yellow "View Pattern" button at card bottom */}
-                  <a
+                  {/* view pattern */}
+                  {/* <a
                     className="card-link"
                     href={p.pattern_link}
                     target="_blank"
                     rel="noreferrer"
                   >
                     View Pattern ✦
-                  </a>
+                  </a> */}
                 </div>
               ))}
             </div>
+
+                        {/* ── pagination ── */}
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button
+                  className="page-btn page-btn--arrow"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  ‹
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (p) => (
+                    <button
+                      key={p}
+                      className={`page-btn ${p === currentPage ? "page-btn--active" : ""}`}
+                      onClick={() => goToPage(p)}
+                    >
+                      {p}
+                    </button>
+                  ),
+                )}
+
+                <button
+                  className="page-btn page-btn--arrow"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  ›
+                </button>
+              </div>
+            )}
+          </div>
           </div>
         </div>
       </div>

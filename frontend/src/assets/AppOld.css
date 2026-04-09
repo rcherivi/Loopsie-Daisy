@@ -11,14 +11,14 @@
   --pink-mid: #f09cb0;
   --pink-deep: #e07898;
   --yellow: #fde06a;
-  --yellow-dark: #c8a000;
-  --yellow-btn: #fad848;
+  --yellow-dark: #f7f4b2;
+  --yellow-btn: #faf7c3;
   --ink: #2e3a2e;
   --ink-muted: #6a8268;
   --green-line: rgba(157, 204, 168, 0.45);
 }
 
-/* ── body ──────────────────────────────────────────── */
+/* body */
 body {
   margin: 0;
   font-family: "Gochi Hand", cursive;
@@ -38,53 +38,7 @@ body {
   align-items: stretch;
 }
 
-/* ═══════════════════════════════════════════════════
-   TOP HEADER: white bar with logo + scallop bottom
-═══════════════════════════════════════════════════ */
-.app-header {
-  background: var(--white);
-  padding: 14px 32px 0;
-  display: flex;
-  align-items: center;
-  position: relative;
-  z-index: 10;
-  flex-shrink: 0;
-}
-
-.app-logo-img {
-  height: 58px;
-  width: auto;
-  filter: drop-shadow(0 1px 3px rgba(60, 100, 60, 0.12));
-}
-
-/* pink scallop strip that sits below the white header */
-.header-scallop {
-  width: 100%;
-  flex-shrink: 0;
-  height: 28px;
-  background: var(--pink-header);
-  position: relative;
-  z-index: 9;
-  /* scallop bottom edge on the pink strip */
-  -webkit-mask-image: radial-gradient(
-    ellipse 20px 28px at 10px 0%,
-    transparent 70%,
-    black 71%
-  );
-  -webkit-mask-size: 20px 28px;
-  -webkit-mask-repeat: repeat-x;
-  mask-image: radial-gradient(
-    ellipse 20px 28px at 10px 0%,
-    transparent 70%,
-    black 71%
-  );
-  mask-size: 20px 28px;
-  mask-repeat: repeat-x;
-}
-
-/* ═══════════════════════════════════════════════════
-   MAIN CONTENT AREA
-═══════════════════════════════════════════════════ */
+/* main body */
 .app-main {
   flex: 1;
   padding: 36px 32px 100px;
@@ -94,9 +48,10 @@ body {
   gap: 24px;
 }
 
-/* ── big headline ─────────────────────────────────── */
+/* headline */
 .app-headline {
-  font-family: "Nunito", sans-serif;
+  /* font-family: "Nunito", sans-serif; */
+  font-family: "Gochi Hand", cursive;
   font-weight: 900;
   font-size: clamp(1.4rem, 3.5vw, 2.2rem);
   color: var(--ink);
@@ -106,9 +61,7 @@ body {
   margin: 0;
 }
 
-/* ═══════════════════════════════════════════════════
-   SEARCH BAR — white pill with scallop bottom border
-═══════════════════════════════════════════════════ */
+/* search bar */
 .search-wrap {
   width: 100%;
   max-width: 700px;
@@ -126,31 +79,6 @@ body {
   overflow: visible;
   position: relative;
   z-index: 2;
-}
-
-/* scallop decoration below the search pill */
-.search-scallop {
-  width: calc(100% - 120px); /* doesn't extend under button */
-  height: 14px;
-  background: rgba(244, 184, 196, 0.55);
-  margin: 0 60px;
-  border-radius: 0 0 8px 8px;
-  -webkit-mask-image: radial-gradient(
-    ellipse 12px 14px at 6px 0%,
-    transparent 70%,
-    black 71%
-  );
-  -webkit-mask-size: 12px 14px;
-  -webkit-mask-repeat: repeat-x;
-  mask-image: radial-gradient(
-    ellipse 12px 14px at 6px 0%,
-    transparent 70%,
-    black 71%
-  );
-  mask-size: 12px 14px;
-  mask-repeat: repeat-x;
-  position: relative;
-  z-index: 1;
 }
 
 .input-box {
@@ -180,7 +108,6 @@ body {
   flex-shrink: 0;
   background: var(--yellow-btn);
   border: 2.5px solid var(--yellow-dark);
-  /* blob / cloud shape */
   border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
   padding: 10px 24px;
   margin: 6px 8px 6px 0;
@@ -214,7 +141,7 @@ body {
   flex-shrink: 0;
 }
 
-/* ── back / clear ─────────────────────────────────── */
+/* back button */
 .back-btn {
   background: rgba(255, 255, 255, 0.7);
   border: 1.5px solid rgba(200, 216, 196, 0.6);
@@ -235,9 +162,7 @@ body {
   transform: translateX(-2px);
 }
 
-/* ═══════════════════════════════════════════════════
-   BODY: sidebar + cards
-═══════════════════════════════════════════════════ */
+/* cards */
 .app-body {
   display: flex;
   gap: 24px;
@@ -246,9 +171,7 @@ body {
   align-items: flex-start;
 }
 
-/* ═══════════════════════════════════════════════════
-   FILTER SIDEBAR
-═══════════════════════════════════════════════════ */
+/* filters  */
 .filter-sidebar {
   flex-shrink: 0;
   width: 230px;
@@ -306,7 +229,7 @@ body {
   margin: 0;
 }
 
-/* small daisy bullet next to section title */
+/* small daisy  */
 .filter-section-title .title-daisy {
   width: 18px;
   height: 18px;
@@ -347,9 +270,7 @@ body {
   font-weight: 700;
 }
 
-/* ═══════════════════════════════════════════════════
-   CARD GRID
-═══════════════════════════════════════════════════ */
+/* card grid */
 .card-grid-wrap {
   flex: 1;
   min-width: 0;
@@ -364,13 +285,20 @@ body {
   letter-spacing: 1px;
 }
 
-.card-grid {
+/* .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
   gap: 16px;
+} */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-/* ── single pattern card ──────────────────────────── */
+/* single card pattern */
 .pattern-card {
   background: var(--white-card);
   border-radius: 20px;
@@ -410,7 +338,122 @@ body {
   transform: scale(1.04);
 }
 
-/* free / paid badge */
+/* overlay container */
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* stack content from top */
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  text-align: center;
+
+  opacity: 0;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 100%;
+  border-radius: 20px;
+}
+/* show on hover */
+.pattern-card:hover .card-overlay {
+  opacity: 1;
+}
+
+/* description text */
+.overlay-desc {
+  font-family: "Gochi Hand", cursive;
+  font-size: 0.85rem;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+/* info row */
+.overlay-info {
+  display: flex;
+  gap: 10px;
+  font-size: 0.7rem;
+  font-family: "Nunito", sans-serif;
+  font-weight: 700;
+}
+
+.overlay-info span {
+  background: var(--pink-header);
+  color: var(--pink-deep);
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.pattern-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 8px;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  transform: translateY(10px);
+  z-index: 10;
+  overflow-y: auto;
+  justify-content: center;
+}
+
+.pattern-card:hover .card-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.overlay-description {
+  font-family: "Gochi Hand", cursive;
+  font-size: 0.85rem;
+  color: var(--ink);
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+}
+
+.overlay-link {
+  margin-top: auto;
+  padding: 6px 12px;
+  font-family: "Nunito", sans-serif;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: var(--ink);
+  background: var(--yellow-btn);
+  border: 1.5px solid var(--yellow-dark);
+  border-radius: 20px;
+  text-decoration: none;
+  text-align: center;
+  transition:
+    background 0.15s,
+    transform 0.12s;
+}
+
+.overlay-link:hover {
+  background: #f5cc30;
+  transform: translateY(-1px);
+}
+
+/* skill badge */
 .card-badge {
   position: absolute;
   top: 8px;
@@ -421,16 +464,8 @@ body {
   padding: 2px 9px;
   border-radius: 20px;
   letter-spacing: 0.3px;
-}
-
-.card-badge--free {
-  background: var(--sage-dark);
+  background-color: var(--sage-dark);
   color: var(--white);
-}
-
-.card-badge--paid {
-  background: var(--pink-header);
-  color: var(--pink-deep);
 }
 
 /* card body */
@@ -453,7 +488,7 @@ body {
   margin: 0;
 }
 
-/* star + match row */
+/* match percentage  */
 .card-meta {
   font-family: "Gochi Hand", cursive;
   font-size: 0.75rem;
@@ -468,7 +503,7 @@ body {
   font-size: 0.8rem;
 }
 
-/* card footer row: skill badge + heart */
+/* skill */
 .card-footer {
   display: flex;
   align-items: center;
@@ -486,22 +521,6 @@ body {
   padding: 2px 10px;
   border-radius: 20px;
   border: 1px solid var(--pink-scallop);
-}
-
-.card-heart {
-  width: 22px;
-  height: 22px;
-  cursor: pointer;
-  opacity: 0.55;
-  transition:
-    opacity 0.14s,
-    transform 0.14s;
-  flex-shrink: 0;
-}
-
-.card-heart:hover {
-  opacity: 1;
-  transform: scale(1.15);
 }
 
 .card-link {
@@ -542,7 +561,7 @@ body {
   font-family: "Gochi Hand", cursive;
 }
 
-/* ── chat bar ──────────────────────────────────────── */
+/* chat  */
 .chat-outer {
   position: fixed;
   bottom: 0;
@@ -602,7 +621,7 @@ body {
   cursor: not-allowed;
 }
 
-/* ── messages ─────────────────────────────────────── */
+/* messages */
 #messages {
   width: 100%;
   max-width: 760px;
@@ -627,7 +646,7 @@ body {
   color: var(--ink);
 }
 
-/* ── loading dots ──────────────────────────────────── */
+/* loading */
 .loading-indicator {
   display: none;
   gap: 6px;
@@ -666,7 +685,6 @@ body {
   }
 }
 
-/* ── responsive ────────────────────────────────────── */
 @media (max-width: 720px) {
   .app-body {
     flex-direction: column;

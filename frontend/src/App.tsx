@@ -90,27 +90,28 @@ function BtnDaisy() {
   );
 }
 
-function HeartSVG() {
-  return (
-    <svg
-      className="card-heart"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.09C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 12 21 12 21Z"
-        fill="#f4b8c4"
-        stroke="#e07898"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+// function HeartSVG() {
+//   return (
+//     <svg
+//       className="card-heart"
+//       viewBox="0 0 24 24"
+//       fill="none"
+//       xmlns="http://www.w3.org/2000/svg"
+//     >
+//       <path
+//         d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.09C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 12 21 12 21Z"
+//         fill="#f4b8c4"
+//         stroke="#e07898"
+//         strokeWidth="1.5"
+//         strokeLinecap="round"
+//         strokeLinejoin="round"
+//       />
+//     </svg>
+//   );
+// }
 
 const SKILLS = ["", "Beginner", "Intermediate", "Advanced"];
+const PAGE_SIZE = 6;
 
 function App(): JSX.Element {
   const [showLanding, setShowLanding] = useState(true);
@@ -122,6 +123,9 @@ function App(): JSX.Element {
   const [isSearching, setIsSearching] = useState(false);
   const [searchProgress, setSearchProgress] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -149,6 +153,7 @@ function App(): JSX.Element {
     }
     setPatterns([]);
     setIsSearching(true);
+    setCurrentPage(1);
     runProgressSteps();
     const params = new URLSearchParams();
     if (text.trim()) params.append("title", text);
@@ -167,6 +172,21 @@ function App(): JSX.Element {
     }
   };
 
+  const handleSkillFilter = (skill: string) => {
+    setSkillFilter(skill);
+    setCurrentPage(1);
+    // If no search has happened yet, nothing to do
+    if (!hasSearched) return;
+    // Re-fetch silently (no loading screen)
+    const params = new URLSearchParams();
+    if (searchTerm.trim()) params.append("title", searchTerm);
+    if (skill.trim()) params.append("skill", skill);
+    fetch(`/api/patterns?${params.toString()}`)
+      .then((r) => r.json())
+      .then((data) => setPatterns(data))
+      .catch((e) => console.error(e));
+  };
+
   const triggerSearch = () => {
     const val = inputValue.trim();
     setSearchTerm(val);
@@ -175,9 +195,31 @@ function App(): JSX.Element {
     fetchPatterns(val, skillFilter);
   };
 
+  const fetchPatternsNoLoading = async (text: string, skill: string) => {
+    const params = new URLSearchParams();
+    if (text.trim()) params.append("title", text);
+    if (skill.trim()) params.append("skill", skill);
+
+    try {
+      const res = await fetch(`/api/patterns?${params.toString()}`);
+      const data = await res.json();
+      setPatterns(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // const handleSkillChange = (skill: string) => {
+  //   setSkillFilter(skill);
+  //   if (hasSearched) fetchPatterns(searchTerm, skill);
+  // };
   const handleSkillChange = (skill: string) => {
     setSkillFilter(skill);
-    if (hasSearched) fetchPatterns(searchTerm, skill);
+    setCurrentPage(1);
+
+    if (hasSearched) {
+      fetchPatternsNoLoading(searchTerm, skill);
+    }
   };
 
   const handleBack = () => {
@@ -194,6 +236,16 @@ function App(): JSX.Element {
     setSearchTerm(term);
     setHasSearched(true);
     fetchPatterns(term, skillFilter);
+  };
+
+  const totalPages = Math.ceil(patterns.length / PAGE_SIZE);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageEnd = pageStart + PAGE_SIZE;
+  const visibleCards = patterns.slice(pageStart, pageEnd);
+
+  const goToPage = (p: number) => {
+    setCurrentPage(p);
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   if (showLanding) return <LandingPage onEnter={() => setShowLanding(false)} />;
@@ -298,7 +350,7 @@ function App(): JSX.Element {
                 </div>
               )}
 
-              {patterns.map((p, i) => (
+              {visibleCards.map((p, i) => (
                 <div key={i} className="pattern-card">
                   {/* image */}
                   <div className="card-img-wrap">
@@ -360,6 +412,39 @@ function App(): JSX.Element {
                 </div>
               ))}
             </div>
+
+            {/* ── pagination ── */}
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button
+                  className="page-btn page-btn--arrow"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  ‹
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (p) => (
+                    <button
+                      key={p}
+                      className={`page-btn ${p === currentPage ? "page-btn--active" : ""}`}
+                      onClick={() => goToPage(p)}
+                    >
+                      {p}
+                    </button>
+                  ),
+                )}
+
+                <button
+                  className="page-btn page-btn--arrow"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  ›
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

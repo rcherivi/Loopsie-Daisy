@@ -50,7 +50,8 @@ body {
 
 /* headline */
 .app-headline {
-  font-family: "Nunito", sans-serif;
+  /* font-family: "Nunito", sans-serif; */
+  font-family: "Gochi Hand", cursive;
   font-weight: 900;
   font-size: clamp(1.4rem, 3.5vw, 2.2rem);
   color: var(--ink);
@@ -67,7 +68,6 @@ body {
   position: relative;
 }
 
-/* white pill */
 .search-row {
   display: flex;
   align-items: center;
@@ -672,6 +672,32 @@ body {
 .loading-dot:nth-child(3) {
   background: var(--sage-dark);
   animation-delay: 0.3s;
+}
+
+/* pages */
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 8px;
+}
+
+.page-btn {
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  font-family: "Gochi Hand", cursive;
+}
+
+.page-btn--active {
+  background: #faf7c3;
+  font-weight: bold;
+}
+
+.page-btn--arrow {
+  font-weight: bold;
 }
 
 @keyframes dotBounce {
