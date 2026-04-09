@@ -175,9 +175,7 @@ function App(): JSX.Element {
   const handleSkillFilter = (skill: string) => {
     setSkillFilter(skill);
     setCurrentPage(1);
-    // If no search has happened yet, nothing to do
     if (!hasSearched) return;
-    // Re-fetch silently (no loading screen)
     const params = new URLSearchParams();
     if (searchTerm.trim()) params.append("title", searchTerm);
     if (skill.trim()) params.append("skill", skill);
@@ -413,7 +411,7 @@ function App(): JSX.Element {
               ))}
             </div>
 
-            {/* ── pagination ── */}
+            {/* pages */}
             {totalPages > 1 && (
               <div className="pagination">
                 <button
