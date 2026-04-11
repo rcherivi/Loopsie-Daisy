@@ -20,52 +20,51 @@ pattern_data = []
 # number of latent dimensions
 N_COMPONENTS = 600
 
-
 import numpy as np
-#import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 
-""" def plot_optimal_k(patterns, max_k=1000):
-    docs = [f"{p.title or ''} {p.description or ''}" for p in patterns]
+# def plot_optimal_k(patterns, max_k=1000):
+#     docs = [f"{p.title or ''} {p.description or ''}" for p in patterns]
 
-    vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1, 2), sublinear_tf=True, min_df=2)
-    tfidf_matrix = vectorizer.fit_transform(docs)
+#     vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1, 2), sublinear_tf=True, min_df=2)
+#     tfidf_matrix = vectorizer.fit_transform(docs)
 
-    max_k = min(max_k, tfidf_matrix.shape[1] - 1)
+#     max_k = min(max_k, tfidf_matrix.shape[1] - 1)
 
-    svd = TruncatedSVD(n_components=max_k, random_state=42)
-    svd.fit(tfidf_matrix)
+#     svd = TruncatedSVD(n_components=max_k, random_state=42)
+#     svd.fit(tfidf_matrix)
 
-    cumvar = np.cumsum(svd.explained_variance_ratio_)
-    ks = np.arange(1, max_k + 1)
+#     cumvar = np.cumsum(svd.explained_variance_ratio_)
+#     ks = np.arange(1, max_k + 1)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+#     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
-    ax1.plot(ks, cumvar, linewidth=2)
-    for threshold in [0.5, 0.7, 0.8]:
-        k_thresh = np.searchsorted(cumvar, threshold) + 1
-        ax1.axhline(threshold, linestyle="--", alpha=0.5, label=f"{int(threshold*100)}% → k={k_thresh}")
-        ax1.axvline(k_thresh, linestyle="--", alpha=0.3)
-    ax1.set_xlabel("Number of components (k)")
-    ax1.set_ylabel("Cumulative explained variance")
-    ax1.set_title("Elbow: pick k where curve flattens")
-    ax1.legend()
-    ax1.grid(alpha=0.3)
+#     ax1.plot(ks, cumvar, linewidth=2)
+#     for threshold in [0.5, 0.7, 0.8]:
+#         k_thresh = np.searchsorted(cumvar, threshold) + 1
+#         ax1.axhline(threshold, linestyle="--", alpha=0.5, label=f"{int(threshold*100)}% → k={k_thresh}")
+#         ax1.axvline(k_thresh, linestyle="--", alpha=0.3)
+#     ax1.set_xlabel("Number of components (k)")
+#     ax1.set_ylabel("Cumulative explained variance")
+#     ax1.set_title("Elbow: pick k where curve flattens")
+#     ax1.legend()
+#     ax1.grid(alpha=0.3)
 
-    ax2.plot(ks, svd.explained_variance_ratio_, linewidth=1.5, color="steelblue")
-    ax2.set_xlabel("Component index")
-    ax2.set_ylabel("Variance explained by component")
-    ax2.set_title("Scree plot: look for the 'drop-off'")
-    ax2.grid(alpha=0.3)
+#     ax2.plot(ks, svd.explained_variance_ratio_, linewidth=1.5, color="steelblue")
+#     ax2.set_xlabel("Component index")
+#     ax2.set_ylabel("Variance explained by component")
+#     ax2.set_title("Scree plot: look for the 'drop-off'")
+#     ax2.grid(alpha=0.3)
 
-    plt.tight_layout()
-    plt.savefig("optimal_k.png", dpi=150)
-    plt.close()  # free memory
+#     plt.tight_layout()
+#     plt.savefig("optimal_k.png", dpi=150)
+#     plt.close()  # free memory
 
-    for t in [0.5, 0.6, 0.7, 0.8, 0.9]:
-        k = np.searchsorted(cumvar, t) + 1
-        print(f"  {int(t*100)}% variance explained at k={k}") """
+#     for t in [0.5, 0.6, 0.7, 0.8, 0.9]:
+#         k = np.searchsorted(cumvar, t) + 1
+#         print(f"  {int(t*100)}% variance explained at k={k}")
 
 def build_svd_matrix(patterns):
     global vectorizer, svd, lsa_matrix, pattern_data
@@ -131,13 +130,10 @@ def svd_search(query, skill_filter=""):
             overlap_score = word_overlap(query, combined_text)
             ngram_score   = ngram_sim(query, combined_text)
 
-            title_overlap_score = word_overlap(query, pattern.title)
-
             final_score = (
                 0.6 * lsa_score
-                + 0.15 * overlap_score
-                + 0.15 * ngram_score
-                + 0.1 * title_overlap_score
+                + 0.1 * overlap_score
+                + 0.1 * ngram_score
             )
 
             results.append({
