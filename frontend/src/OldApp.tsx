@@ -5,7 +5,7 @@ import { Pattern } from "./types";
 import Chat from "./Chat";
 import LoadingScreen from "./LoadingScreen";
 
-/* card style */
+/* ── Card style helpers ─────────────────────────────────── */
 
 const TILTS = [
   "tilt-l3",
@@ -29,18 +29,23 @@ function cardStyle(index: number) {
   return { tilt: TILTS[index % TILTS.length], pin: PINS[index % PINS.length] };
 }
 
-/* skill badge */
+/* ── Skill badge ────────────────────────────────────────── */
 
 function SkillBadge({ level }: { level: string }) {
-  if (!level) {
-    return <span className="skill-badge none"> no level</span>;
-  }
-  const normalized = level?.toLowerCase();
-
-  return <span className={`skill-badge ${normalized}`}>{normalized}</span>;
+  const cls = level.toLowerCase() as "beginner" | "intermediate" | "advanced";
+  const icons: Record<string, string> = {
+    beginner: "★",
+    intermediate: "✎",
+    advanced: "◆",
+  };
+  return (
+    <span className={`skill-badge ${cls}`}>
+      {icons[cls] ?? "•"} {level}
+    </span>
+  );
 }
 
-/* push pins */
+/* ── Push pin ───────────────────────────────────────────── */
 
 function Pin({ colorClass }: { colorClass: string }) {
   return (
@@ -51,7 +56,7 @@ function Pin({ colorClass }: { colorClass: string }) {
   );
 }
 
-/* polaroid cards */
+/* ── Single polaroid card ───────────────────────────────── */
 
 function PolaroidCard({ pattern, index }: { pattern: Pattern; index: number }) {
   const { tilt, pin } = useMemo(() => cardStyle(index), [index]);
@@ -92,7 +97,9 @@ function PolaroidCard({ pattern, index }: { pattern: Pattern; index: number }) {
   );
 }
 
-/* app body */
+/* ══════════════════════════════════════════════════════════
+   APP
+   ══════════════════════════════════════════════════════════ */
 
 function App(): JSX.Element {
   const [useLlm, setUseLlm] = useState<boolean | null>(null);
@@ -103,6 +110,7 @@ function App(): JSX.Element {
   const [showLoading, setShowLoading] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  // Holds the fetch to run AFTER the loading screen finishes
   const pendingFetch = useRef<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
@@ -111,46 +119,62 @@ function App(): JSX.Element {
       .then((data) => setUseLlm(data.use_llm));
   }, []);
 
-  const submitSearch = useCallback(
-    async (text: string, skill: string, showLoader: boolean = true) => {
-      if (text.trim() === "") return;
+  /*
+   * submitSearch queues the API call in a ref, then sets showLoading=true.
+   * React re-renders → mounts <LoadingScreen> → its internal timer fires
+   * after 1.4s → calls onDone → we run the queued fetch → results appear.
+   *
+   * Keeping the fetch OUT of the same synchronous call as setShowLoading
+   * guarantees React has time to paint the overlay before any async work.
+   */
+  // const submitSearch = useCallback((text: string, skill: string) => {
+  const submitSearch = useCallback(async (text: string, skill: string) => {
+    if (text.trim() === "") return;
 
-      setSearchTerm(text);
-      setPatterns([]);
-      if (showLoader) {
-        setShowLoading(true);
-        await new Promise(requestAnimationFrame);
-      }
+    setSearchTerm(text);
+    setPatterns([]);
+    setShowLoading(true);
+    await new Promise(requestAnimationFrame);
 
-      const params = new URLSearchParams();
-      if (text.trim() != "") params.append("title", text);
-      if (skill.trim() != "") params.append("skill", skill);
+    const params = new URLSearchParams();
+    if (text.trim() != "") params.append("title", text);
+    if (skill.trim() != "") params.append("skill", skill);
 
-      const start = Date.now();
+    const start = Date.now();
 
-      const res = await fetch(`/api/patterns?${params.toString()}`);
-      const data = await res.json();
+    const res = await fetch(`/api/patterns?${params.toString()}`);
+    const data = await res.json();
 
-      const elapsed = Date.now() - start;
-      if (showLoader && elapsed < 1700) {
-        await new Promise((r) => setTimeout(r, 1700 - elapsed));
-      }
+    const elapsed = Date.now() - start;
+    if (elapsed < 1700) {
+      await new Promise((r) => setTimeout(r, 1700 - elapsed));
+    }
 
-      setPatterns(data);
+    setPatterns(data);
+    setShowLoading(false);
 
-      if (showLoader) {
-        setShowLoading(false);
-      }
-    },
-    [],
-  );
+    // Store the fetch as a closure in a ref — runs after overlay finishes
+    // pendingFetch.current = async () => {
+    //   const params = new URLSearchParams();
+    //   if (text.trim() !== "") params.append("title", text);
+    //   if (skill.trim() !== "") params.append("skill", skill);
+    //   const res = await fetch(`/api/patterns?${params.toString()}`);
+    //   const data = await res.json();
+    //   setPatterns(data);
+    // };
 
+    // Show overlay — triggers re-render that mounts LoadingScreen
+    // setShowLoading(true);
+    // requestAnimationFrame(() => {});
+  }, []);
+
+  // LoadingScreen calls this after its fade — we hide the overlay and run the fetch
   const handleLoadingDone = useCallback(() => {
     setShowLoading(false);
     const fn = pendingFetch.current;
     if (fn) {
       pendingFetch.current = null;
-      fn();
+      fn(); // kick off the actual API call
     }
   }, []);
 
@@ -176,7 +200,7 @@ function App(): JSX.Element {
   const handleSkillChange = useCallback(
     (level: string) => {
       setSkillFilter(level);
-      if (searchTerm.trim() !== "") submitSearch(searchTerm, level, false);
+      if (searchTerm.trim() !== "") submitSearch(searchTerm, level);
     },
     [searchTerm, submitSearch],
   );
@@ -203,11 +227,11 @@ function App(): JSX.Element {
         )}
 
       <div className={`full-body-container ${useLlm ? "llm-mode" : ""}`}>
-        {/* header */}
+        {/* ── Header ── */}
         <header className="app-header">
           <span className="app-header-logo">Loopsie Daisy</span>
           <div className="app-header-icons">
-            {/* <button className="app-header-btn" aria-label="Favourites">
+            <button className="app-header-btn" aria-label="Favourites">
               <svg
                 width="18"
                 height="18"
@@ -231,11 +255,11 @@ function App(): JSX.Element {
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
-            </button> */}
+            </button>
           </div>
         </header>
 
-        {/* search bar */}
+        {/* ── Search ── */}
         <section className="search-section">
           <div className="search-row">
             <div
@@ -322,7 +346,7 @@ function App(): JSX.Element {
           </div>
         </section>
 
-        {/* polaroid pinboard */}
+        {/* ── Polaroid pinboard ── */}
         <div className="patterns-board">
           {!hasSearch && (
             <div className="empty-state">
@@ -390,21 +414,21 @@ function App(): JSX.Element {
           ))}
         </div>
 
-        {/* chat */}
+        {/* ── Chat (LLM mode only) ── */}
         {useLlm && <Chat onSearchTerm={handleChatSearch} />}
 
-        {/* footer */}
+        {/* ── Footer ── */}
         <footer className="app-footer">
           <span className="app-footer-logo">Loopsie Daisy</span>
           <span className="app-footer-copy">
-            © 2026 Loopsie Daisy. Stitched with love.
+            © 2024 Loopsie Daisy. Stitched with love.
           </span>
-          {/* <nav className="app-footer-links">
+          <nav className="app-footer-links">
             <a href="#">About</a>
             <a href="#">Privacy</a>
             <a href="#">Terms</a>
             <a href="#">Contact</a>
-          </nav> */}
+          </nav>
         </footer>
       </div>
     </>
