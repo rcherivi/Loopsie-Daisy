@@ -13,6 +13,9 @@ import math
 from ngram_search import ngram_sim, word_overlap_score
 from tfidf_search import build_index, search
 
+# Ying changes
+from svd import build_svd_matrix, plot_optimal_k, svd_search
+
 # ── AI toggle ────────────────────────────────────────────────────────────────
 USE_LLM = False
 # USE_LLM = True
@@ -84,7 +87,8 @@ def json_search(_):
     query = request.args.get("title", "")
     skill = request.args.get("skill", "")
 
-    raw_results = search(query, skill)
+    # Ying: use SVD-based search instead of raw TF-IDF
+    raw_results = svd_search(query, skill)
 
     formatted_results = []
     for item in raw_results:
@@ -105,7 +109,8 @@ def register_routes(app):
     @app.before_first_request
     def initialize():
         patterns = Pattern.query.all()
-        build_index(patterns)
+        # build_index(patterns)
+        build_svd_matrix(patterns)
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
