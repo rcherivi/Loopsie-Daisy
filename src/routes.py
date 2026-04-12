@@ -14,7 +14,7 @@ from ngram_search import ngram_sim, word_overlap_score
 from tfidf_search import build_index, search
 
 # Ying changes
-from svd import build_svd_matrix, plot_optimal_k, svd_search
+from svd import build_svd_matrix, svd_search
 
 # ── AI toggle ────────────────────────────────────────────────────────────────
 USE_LLM = False
