@@ -1,6 +1,6 @@
-import matplotlib
-matplotlib.use("agg")
-import matplotlib.pyplot as plt
+# import matplotlib
+# matplotlib.use("agg")
+# import matplotlib.pyplot as plt
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
