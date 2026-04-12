@@ -20,6 +20,7 @@ pattern_data = []
 # number of latent dimensions
 N_COMPONENTS = 600
 
+
 import numpy as np
 #import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -130,10 +131,13 @@ def svd_search(query, skill_filter=""):
             overlap_score = word_overlap(query, combined_text)
             ngram_score   = ngram_sim(query, combined_text)
 
+            title_overlap_score = word_overlap(query, pattern.title)
+
             final_score = (
                 0.6 * lsa_score
-                + 0.1 * overlap_score
-                + 0.1 * ngram_score
+                + 0.15 * overlap_score
+                + 0.15 * ngram_score
+                + 0.1 * title_overlap_score
             )
 
             results.append({
