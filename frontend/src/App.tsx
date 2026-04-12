@@ -1,15 +1,148 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import "./App.css";
-import SearchIcon from "./assets/mag.png";
-import PageLogo from "./assets/page_logo.svg";
 import { Pattern } from "./types";
 import Chat from "./Chat";
+import LoadingScreen from "./LoadingScreen";
+
+// daisy
+function Daisy({
+  petalColor,
+  size = 64,
+}: {
+  petalColor: string;
+  size?: number;
+}) {
+  const c = size / 2;
+  const pr = size * 0.28;
+  const pd = size * 0.22;
+  const cr = size * 0.14;
+
+  const petals = Array.from({ length: 5 }, (_, i) => {
+    const angle = (i * 72 - 90) * (Math.PI / 180);
+    return (
+      <circle
+        key={i}
+        cx={c + Math.cos(angle) * pd}
+        cy={c + Math.sin(angle) * pd}
+        r={pr}
+        fill={petalColor}
+      />
+    );
+  });
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {petals}
+      <circle cx={c} cy={c} r={cr} fill="#f9e07a" />
+    </svg>
+  );
+}
+
+/* card tilt */
+
+const TILTS = [
+  "tilt-l3",
+  "tilt-l2",
+  "tilt-l1",
+  "tilt-0",
+  "tilt-r1",
+  "tilt-r2",
+  "tilt-r3",
+] as const;
+const PINS = [
+  "pin-rose",
+  "pin-green",
+  "pin-blush",
+  "pin-deco",
+  "pin-tidal",
+  "pin-deep",
+] as const;
+
+function cardStyle(index: number) {
+  return { tilt: TILTS[index % TILTS.length], pin: PINS[index % PINS.length] };
+}
+
+/* skill*/
+
+function SkillBadge({ level }: { level: string }) {
+  if (!level) return <span className="skill-badge none">no level</span>;
+  const normalized = level.toLowerCase();
+  return <span className={`skill-badge ${normalized}`}>{normalized}</span>;
+}
+
+/* push pin */
+
+function Pin({ colorClass }: { colorClass: string }) {
+  return (
+    <div className={`pin ${colorClass}`}>
+      <div className="pin-head" />
+      <div className="pin-neck" />
+    </div>
+  );
+}
+
+/* polaroid card */
+
+function PolaroidCard({ pattern, index }: { pattern: Pattern; index: number }) {
+  const { tilt, pin } = useMemo(() => cardStyle(index), [index]);
+  return (
+    <div className={`polaroid-wrapper ${tilt}`}>
+      <Pin colorClass={pin} />
+      <div className="polaroid-card">
+        <div className="polaroid-img-wrap">
+          <img
+            src={
+              new URL(`./assets/images/${pattern.image_path}`, import.meta.url)
+                .href
+            }
+            alt={pattern.title}
+            className="polaroid-card-img"
+          />
+        </div>
+        <div className="polaroid-card-body">
+          <h3 className="polaroid-card-title">{pattern.title}</h3>
+          <div className="polaroid-card-meta">
+            <SkillBadge level={pattern.skill_level} />
+            <span className="match-score">
+              {Math.round(pattern.score * 100)}% Match
+            </span>
+          </div>
+          <p className="polaroid-card-desc">{pattern.description}</p>
+        </div>
+        <a
+          className="polaroid-card-link"
+          href={pattern.pattern_link}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View Pattern
+        </a>
+      </div>
+    </div>
+  );
+}
+
+/* app */
 
 function App(): JSX.Element {
   const [useLlm, setUseLlm] = useState<boolean | null>(null);
+  const [inputValue, setInputValue] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [skillFilter, setSkillFilter] = useState<string>("");
+  const [showLoading, setShowLoading] = useState(false);
+
+  const [resolved, setResolved] = useState(false);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fetchedDataRef = useRef<Pattern[] | null>(null);
+  const loadingDoneRef = useRef(false);
 
   useEffect(() => {
     fetch("/api/config")
@@ -17,113 +150,272 @@ function App(): JSX.Element {
       .then((data) => setUseLlm(data.use_llm));
   }, []);
 
-  const fetchPatterns = async (text: string, skill: string) => {
-    const params = new URLSearchParams();
-    if (text.trim() !== "") {
-      params.append("title", text);
-    }
-    if (skill.trim() !== "") {
-      params.append("skill", skill);
-    }
-    const response = await fetch(`/api/patterns?${params.toString()}`);
-    const data = await response.json();
+  const applyResults = useCallback((data: Pattern[]) => {
     setPatterns(data);
-  };
+    setResolved(true);
+    setShowLoading(false);
+  }, []);
 
-  const handleSearch = async (value: string): Promise<void> => {
-    setSearchTerm(value);
-    if (value.trim() === "") {
-      setPatterns([]);
-      return;
+  const runFetch = useCallback(
+    async (text: string, skill: string) => {
+      fetchedDataRef.current = null;
+      loadingDoneRef.current = false;
+
+      const params = new URLSearchParams();
+      if (text.trim() !== "") params.append("title", text);
+      if (skill.trim() !== "") params.append("skill", skill);
+
+      const res = await fetch(`/api/patterns?${params.toString()}`);
+      const data: Pattern[] = await res.json();
+
+      if (loadingDoneRef.current) {
+        applyResults(data);
+      } else {
+        fetchedDataRef.current = data;
+      }
+    },
+    [applyResults],
+  );
+
+  const handleLoadingDone = useCallback(() => {
+    loadingDoneRef.current = true;
+    if (fetchedDataRef.current !== null) {
+      applyResults(fetchedDataRef.current);
+      fetchedDataRef.current = null;
     }
-    fetchPatterns(value, skillFilter);
-  };
+  }, [applyResults]);
+
+  const submitSearch = useCallback(
+    (text: string, skill: string) => {
+      if (text.trim() === "") return;
+      setSearchTerm(text);
+      setResolved(false);
+      setPatterns([]);
+      setShowLoading(true);
+      runFetch(text, skill);
+    },
+    [runFetch],
+  );
+
+  const handleSkillChange = useCallback(
+    (level: string) => {
+      setSkillFilter(level);
+      if (searchTerm.trim() === "") return;
+
+      setResolved(false);
+      setPatterns([]);
+
+      const doFetch = async () => {
+        const params = new URLSearchParams();
+        if (searchTerm.trim() !== "") params.append("title", searchTerm);
+        if (level.trim() !== "") params.append("skill", level);
+        const res = await fetch(`/api/patterns?${params.toString()}`);
+        const data: Pattern[] = await res.json();
+        setPatterns(data);
+        setResolved(true);
+      };
+      doFetch();
+    },
+    [searchTerm],
+  );
+
+  const handleSubmit = useCallback(() => {
+    submitSearch(inputValue, skillFilter);
+  }, [inputValue, skillFilter, submitSearch]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") handleSubmit();
+    },
+    [handleSubmit],
+  );
+
+  const handleClear = useCallback(() => {
+    setInputValue("");
+    setSearchTerm("");
+    setPatterns([]);
+    setResolved(false);
+    fetchedDataRef.current = null;
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, []);
+
+  const handleChatSearch = useCallback(
+    (value: string) => {
+      setInputValue(value);
+      submitSearch(value, skillFilter);
+    },
+    [skillFilter, submitSearch],
+  );
 
   if (useLlm === null) return <></>;
 
+  const hasSearch = searchTerm.trim() !== "";
+  const showNoResults = hasSearch && resolved && patterns.length === 0;
+
+  console.log("DEBUG:", {
+    hasSearch,
+    resolved,
+    patterns,
+    length: patterns.length,
+  });
+
   return (
-    <div className={`full-body-container ${useLlm ? "llm-mode" : ""}`}>
-      {/* Search bar (always shown) */}
-      <div className="top-text">
-        <img src={PageLogo} alt="loopsie daisy" className="header-image" />
-        <div
-          className="input-box"
-          onClick={() => document.getElementById("search-input")?.focus()}
-        >
-          <img src={SearchIcon} alt="search" />
-          <input
-            id="search-input"
-            placeholder="Search for a crochet pattern..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-        </div>
-      </div>
+    <>
+      {showLoading &&
+        createPortal(
+          <LoadingScreen onDone={handleLoadingDone} />,
+          document.body,
+        )}
 
-      {/* Skill filter */}
-      <div>
-        <label htmlFor="skill-select">Filter by skill level: </label>
-        <select
-          id="skill-select"
-          value={skillFilter}
-          onChange={(e) => {
-            const newSkill = e.target.value;
-            setSkillFilter(newSkill);
-            fetchPatterns(searchTerm, newSkill); // re-run search with new skill filter
-          }}
-        >
-          <option value="">All levels</option>
-          <option value="Beginner">Beginner</option>
-          <option value="Intermediate">Intermediate</option>
-          <option value="Advanced">Advanced</option>
-        </select>
-      </div>
-
-      {/* Search results (always shown) */}
-      <div id="answer-box">
-        {patterns.map((pattern, index) => (
-          <div key={index} className="episode-item">
-            <img
-              src={
-                new URL(
-                  `./assets/images/${pattern.image_path}`,
-                  import.meta.url,
-                ).href
-              }
-              alt={pattern.title}
-              className="episode-image"
-            />
-            <div className="episode-content">
-              <h3 className="episode-title">{pattern.title}</h3>
-              <p className="episode-rating">
-                Skill Level: {pattern.skill_level}
-              </p>
-              <div className="episode-desc"> {pattern.description} </div>
-              <a
-                className="pattern-link"
-                href={pattern.pattern_link}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {" "}
-                Pattern Link
-              </a>
-              <p className="score">Score: {pattern.score.toFixed(3)}</p>
-            </div>
+      <div className={`full-body-container ${useLlm ? "llm-mode" : ""}`}>
+        {/* header */}
+        {/* <header className="app-header">
+          <span className="app-header-logo">Loopsie Daisy</span>
+          <div className="app-header-icons" />
+        </header> */}
+        <header className="app-header">
+          <div className="logo-container">
+            <span className="app-header-logo">Loopsie Daisy</span>
+            <Daisy petalColor="#fdffdc" size={32} />
+            <Daisy petalColor="#f8f3f2" size={32} />
+            <Daisy petalColor="#edf9b5" size={32} />
           </div>
-          // <div key={index} className="episode-item">
-          //   <h3 className="episode-title">{pattern.title}</h3>
-          //   <p className="episode-rating">Skill Level: {pattern.skill_level}</p>
-          //   <p className="episode-desc">{pattern.description}</p>
-          //   <a className="pattern-link" href={pattern.pattern_link}>Pattern Link</a>
-          //   <p className="score">Score: {pattern.score.toFixed(3)}</p>
-          // </div>
-        ))}
-      </div>
 
-      {/* Chat (only when USE_LLM = True in routes.py) */}
-      {useLlm && <Chat onSearchTerm={handleSearch} />}
-    </div>
+          <div className="header-flowers" />
+          <div className="app-header-icons" />
+        </header>
+
+        {/* search */}
+        <section className="search-section">
+          <div className="search-row">
+            <div
+              className="search-box"
+              onClick={() => inputRef.current?.focus()}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#a0606e"
+                strokeWidth="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                ref={inputRef}
+                id="search-input"
+                placeholder="Search for patterns (eg. wavy beachy blue tote bag)"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+              {inputValue !== "" && (
+                <button
+                  className="search-clear-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClear();
+                  }}
+                  aria-label="Clear search"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#a0606e"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            <button
+              className="search-submit-btn"
+              onClick={handleSubmit}
+              disabled={inputValue.trim() === ""}
+            >
+              Search
+            </button>
+          </div>
+
+          {hasSearch && (
+            <p className="active-search-label">
+              Showing results for <strong>"{searchTerm}"</strong>
+            </p>
+          )}
+
+          <div className="filter-row">
+            <button
+              className={`filter-pill ${skillFilter === "" ? "active" : ""}`}
+              onClick={() => handleSkillChange("")}
+            >
+              All levels
+            </button>
+            {(["Beginner", "Intermediate", "Advanced"] as const).map(
+              (level) => (
+                <button
+                  key={level}
+                  className={`filter-pill ${skillFilter === level ? "active" : ""}`}
+                  onClick={() => handleSkillChange(level)}
+                >
+                  {level}
+                </button>
+              ),
+            )}
+          </div>
+        </section>
+
+        {/* polaroid pinboard */}
+        <div className="patterns-board">
+          {/* default */}
+          {!hasSearch && (
+            <div className="empty-state">
+              <p>Search for a pattern to get started!</p>
+              <span className="empty-hint">
+                Try "cozy sweater", "cute flower", or "beginner scarf"
+              </span>
+            </div>
+          )}
+
+          {/* no results */}
+          {showNoResults && (
+            <div className="empty-state">
+              <p>
+                No patterns found for "{searchTerm}"
+                {skillFilter ? ` in ${skillFilter}` : ""}
+              </p>
+              <span className="empty-hint">
+                Try a different search term or remove the skill filter
+              </span>
+            </div>
+          )}
+
+          {/* results */}
+          {resolved &&
+            patterns.map((pattern, index) => (
+              <PolaroidCard key={index} pattern={pattern} index={index} />
+            ))}
+        </div>
+
+        {/* chat */}
+        {useLlm && <Chat onSearchTerm={handleChatSearch} />}
+
+        {/* footer */}
+        <footer className="app-footer">
+          <span className="app-footer-logo">Loopsie Daisy</span>
+          <span className="app-footer-copy">
+            © 2026 Loopsie Daisy. Stitched with love.
+          </span>
+        </footer>
+      </div>
+    </>
   );
 }
 
