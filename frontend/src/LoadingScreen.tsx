@@ -47,7 +47,7 @@ const FLOWERS = [
   "#f7c9d4", // Azalea blush
   "#c8de9d", // Deco green
   "#f2a0b8", // rose pink
-  "#b8d4f0", // powder blue
+  "#fbffb8", // powder blue
   "#e0eea3", // Tidal lime
 ];
 
@@ -55,27 +55,23 @@ export default function LoadingScreen({ onDone }: Props): JSX.Element {
   const [dotCount, setDotCount] = useState(1);
   const [fading, setFading] = useState(false);
 
-  // Store onDone in a ref so the timer closure never goes stale
   const onDoneRef = useRef(onDone);
   useEffect(() => {
     onDoneRef.current = onDone;
   }, [onDone]);
 
-  // Dot animation
   useEffect(() => {
     const id = setInterval(() => setDotCount((d) => (d % 3) + 1), 500);
     return () => clearInterval(id);
   }, []);
 
-  // Dismiss timer — runs once on mount, reads onDone from ref
   useEffect(() => {
     const dismiss = setTimeout(() => {
       setFading(true);
-      // Wait for CSS fade then call onDone
       setTimeout(() => onDoneRef.current(), 350);
     }, 1400);
     return () => clearTimeout(dismiss);
-  }, []); // intentionally empty — fires once on mount only
+  }, []);
 
   return (
     <div className={`loading-screen${fading ? " fade-out" : ""}`}>
@@ -122,7 +118,7 @@ export default function LoadingScreen({ onDone }: Props): JSX.Element {
         {/* <p className="loading-subtitle">
           Gently stitching your creative world...
         </p> */}
-        <p className="loading-tagline">Est. 2024 &bull; Petal &amp; Purl</p>
+        <p className="loading-tagline">Est. 2026 &bull; Petal &amp; Purl</p>
       </main>
 
       <footer className="loading-footer">

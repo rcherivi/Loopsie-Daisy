@@ -5,6 +5,45 @@ import { Pattern } from "./types";
 import Chat from "./Chat";
 import LoadingScreen from "./LoadingScreen";
 
+// daisy
+function Daisy({
+  petalColor,
+  size = 64,
+}: {
+  petalColor: string;
+  size?: number;
+}) {
+  const c = size / 2;
+  const pr = size * 0.28;
+  const pd = size * 0.22;
+  const cr = size * 0.14;
+
+  const petals = Array.from({ length: 5 }, (_, i) => {
+    const angle = (i * 72 - 90) * (Math.PI / 180);
+    return (
+      <circle
+        key={i}
+        cx={c + Math.cos(angle) * pd}
+        cy={c + Math.sin(angle) * pd}
+        r={pr}
+        fill={petalColor}
+      />
+    );
+  });
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {petals}
+      <circle cx={c} cy={c} r={cr} fill="#f9e07a" />
+    </svg>
+  );
+}
+
 /* card tilt */
 
 const TILTS = [
@@ -230,8 +269,19 @@ function App(): JSX.Element {
 
       <div className={`full-body-container ${useLlm ? "llm-mode" : ""}`}>
         {/* header */}
-        <header className="app-header">
+        {/* <header className="app-header">
           <span className="app-header-logo">Loopsie Daisy</span>
+          <div className="app-header-icons" />
+        </header> */}
+        <header className="app-header">
+          <div className="logo-container">
+            <span className="app-header-logo">Loopsie Daisy</span>
+            <Daisy petalColor="#fdffdc" size={32} />
+            <Daisy petalColor="#f8f3f2" size={32} />
+            <Daisy petalColor="#edf9b5" size={32} />
+          </div>
+
+          <div className="header-flowers" />
           <div className="app-header-icons" />
         </header>
 
@@ -256,7 +306,7 @@ function App(): JSX.Element {
               <input
                 ref={inputRef}
                 id="search-input"
-                placeholder="Search for patterns, yarns, or crochet hooks"
+                placeholder="Search for patterns (eg. wavy beachy blue tote bag)"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
