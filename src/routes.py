@@ -80,11 +80,11 @@ USE_LLM = False
 
 #     return scored_matches[:10]
 
-def json_search(_):
+def json_search():
     query = request.args.get("title", "")
     skill = request.args.get("skill", "")
 
-    raw_results = search(query, skill)
+    raw_results = search(query, skill) or []
 
     formatted_results = []
     for item in raw_results:
@@ -123,7 +123,8 @@ def register_routes(app):
     def patterns_search():
         # text = request.args.get("title", "")
         # return jsonify(json_search(text))
-        return jsonify(json_search(None))
+        # return jsonify(json_search(None))
+        return jsonify(json_search())
 
 
     @app.route('/images/<path:filename>')

@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Nunito:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap");
 
 /* ══════════════════════════════════════════════════
-   COLOR TOKENS  (Lavender Blush palette)
+   colors
    #fff1f4  Lavender Blush  — page background
    #f7c9d4  Azalea          — header, accents
    #c8de9d  Deco            — green accent
@@ -423,8 +423,13 @@
 .match-score {
   font-size: 10px;
   font-weight: 700;
-  color: #a0606e;
+  color: #a9b86e;
   font-family: "Nunito", sans-serif;
+  /* box-shadow: 0 0 15px 5px rgba(224, 238, 163, 0.75);
+  background-color: #e0eea3; */
+  text-shadow:
+    0 0 10px #e0eea3,
+    0 0 20px #e0eea3;
 }
 
 /* description section */

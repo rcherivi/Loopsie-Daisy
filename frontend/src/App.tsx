@@ -5,7 +5,7 @@ import { Pattern } from "./types";
 import Chat from "./Chat";
 import LoadingScreen from "./LoadingScreen";
 
-/* card style */
+/* card tilt */
 
 const TILTS = [
   "tilt-l3",
@@ -29,18 +29,15 @@ function cardStyle(index: number) {
   return { tilt: TILTS[index % TILTS.length], pin: PINS[index % PINS.length] };
 }
 
-/* skill badge */
+/* skill*/
 
 function SkillBadge({ level }: { level: string }) {
-  if (!level) {
-    return <span className="skill-badge none"> no level</span>;
-  }
-  const normalized = level?.toLowerCase();
-
+  if (!level) return <span className="skill-badge none">no level</span>;
+  const normalized = level.toLowerCase();
   return <span className={`skill-badge ${normalized}`}>{normalized}</span>;
 }
 
-/* push pins */
+/* push pin */
 
 function Pin({ colorClass }: { colorClass: string }) {
   return (
@@ -51,7 +48,7 @@ function Pin({ colorClass }: { colorClass: string }) {
   );
 }
 
-/* polaroid cards */
+/* polaroid card */
 
 function PolaroidCard({ pattern, index }: { pattern: Pattern; index: number }) {
   const { tilt, pin } = useMemo(() => cardStyle(index), [index]);
@@ -92,7 +89,7 @@ function PolaroidCard({ pattern, index }: { pattern: Pattern; index: number }) {
   );
 }
 
-/* app body */
+/* app */
 
 function App(): JSX.Element {
   const [useLlm, setUseLlm] = useState<boolean | null>(null);
@@ -102,8 +99,11 @@ function App(): JSX.Element {
   const [skillFilter, setSkillFilter] = useState<string>("");
   const [showLoading, setShowLoading] = useState(false);
 
+  const [resolved, setResolved] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
-  const pendingFetch = useRef<(() => Promise<void>) | null>(null);
+  const fetchedDataRef = useRef<Pattern[] | null>(null);
+  const loadingDoneRef = useRef(false);
 
   useEffect(() => {
     fetch("/api/config")
@@ -111,48 +111,74 @@ function App(): JSX.Element {
       .then((data) => setUseLlm(data.use_llm));
   }, []);
 
-  const submitSearch = useCallback(
-    async (text: string, skill: string, showLoader: boolean = true) => {
-      if (text.trim() === "") return;
+  const applyResults = useCallback((data: Pattern[]) => {
+    setPatterns(data);
+    setResolved(true);
+    setShowLoading(false);
+  }, []);
 
-      setSearchTerm(text);
-      setPatterns([]);
-      if (showLoader) {
-        setShowLoading(true);
-        await new Promise(requestAnimationFrame);
-      }
+  const runFetch = useCallback(
+    async (text: string, skill: string) => {
+      fetchedDataRef.current = null;
+      loadingDoneRef.current = false;
 
       const params = new URLSearchParams();
-      if (text.trim() != "") params.append("title", text);
-      if (skill.trim() != "") params.append("skill", skill);
-
-      const start = Date.now();
+      if (text.trim() !== "") params.append("title", text);
+      if (skill.trim() !== "") params.append("skill", skill);
 
       const res = await fetch(`/api/patterns?${params.toString()}`);
-      const data = await res.json();
+      const data: Pattern[] = await res.json();
 
-      const elapsed = Date.now() - start;
-      if (showLoader && elapsed < 1700) {
-        await new Promise((r) => setTimeout(r, 1700 - elapsed));
-      }
-
-      setPatterns(data);
-
-      if (showLoader) {
-        setShowLoading(false);
+      if (loadingDoneRef.current) {
+        applyResults(data);
+      } else {
+        fetchedDataRef.current = data;
       }
     },
-    [],
+    [applyResults],
   );
 
   const handleLoadingDone = useCallback(() => {
-    setShowLoading(false);
-    const fn = pendingFetch.current;
-    if (fn) {
-      pendingFetch.current = null;
-      fn();
+    loadingDoneRef.current = true;
+    if (fetchedDataRef.current !== null) {
+      applyResults(fetchedDataRef.current);
+      fetchedDataRef.current = null;
     }
-  }, []);
+  }, [applyResults]);
+
+  const submitSearch = useCallback(
+    (text: string, skill: string) => {
+      if (text.trim() === "") return;
+      setSearchTerm(text);
+      setResolved(false);
+      setPatterns([]);
+      setShowLoading(true);
+      runFetch(text, skill);
+    },
+    [runFetch],
+  );
+
+  const handleSkillChange = useCallback(
+    (level: string) => {
+      setSkillFilter(level);
+      if (searchTerm.trim() === "") return;
+
+      setResolved(false);
+      setPatterns([]);
+
+      const doFetch = async () => {
+        const params = new URLSearchParams();
+        if (searchTerm.trim() !== "") params.append("title", searchTerm);
+        if (level.trim() !== "") params.append("skill", level);
+        const res = await fetch(`/api/patterns?${params.toString()}`);
+        const data: Pattern[] = await res.json();
+        setPatterns(data);
+        setResolved(true);
+      };
+      doFetch();
+    },
+    [searchTerm],
+  );
 
   const handleSubmit = useCallback(() => {
     submitSearch(inputValue, skillFilter);
@@ -169,17 +195,10 @@ function App(): JSX.Element {
     setInputValue("");
     setSearchTerm("");
     setPatterns([]);
-    pendingFetch.current = null;
+    setResolved(false);
+    fetchedDataRef.current = null;
     setTimeout(() => inputRef.current?.focus(), 0);
   }, []);
-
-  const handleSkillChange = useCallback(
-    (level: string) => {
-      setSkillFilter(level);
-      if (searchTerm.trim() !== "") submitSearch(searchTerm, level, false);
-    },
-    [searchTerm, submitSearch],
-  );
 
   const handleChatSearch = useCallback(
     (value: string) => {
@@ -191,8 +210,15 @@ function App(): JSX.Element {
 
   if (useLlm === null) return <></>;
 
-  const hasResults = patterns.length > 0;
   const hasSearch = searchTerm.trim() !== "";
+  const showNoResults = hasSearch && resolved && patterns.length === 0;
+
+  console.log("DEBUG:", {
+    hasSearch,
+    resolved,
+    patterns,
+    length: patterns.length,
+  });
 
   return (
     <>
@@ -206,36 +232,10 @@ function App(): JSX.Element {
         {/* header */}
         <header className="app-header">
           <span className="app-header-logo">Loopsie Daisy</span>
-          <div className="app-header-icons">
-            {/* <button className="app-header-btn" aria-label="Favourites">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#5a2a36"
-                strokeWidth="2"
-              >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </button>
-            <button className="app-header-btn" aria-label="Settings">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#5a2a36"
-                strokeWidth="2"
-              >
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </button> */}
-          </div>
+          <div className="app-header-icons" />
         </header>
 
-        {/* search bar */}
+        {/* search */}
         <section className="search-section">
           <div className="search-row">
             <div
@@ -256,7 +256,7 @@ function App(): JSX.Element {
               <input
                 ref={inputRef}
                 id="search-input"
-                placeholder="Search for patterns, yarns, or creators..."
+                placeholder="Search for patterns, yarns, or crochet hooks"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -324,70 +324,34 @@ function App(): JSX.Element {
 
         {/* polaroid pinboard */}
         <div className="patterns-board">
+          {/* default */}
           {!hasSearch && (
             <div className="empty-state">
-              <svg
-                width="52"
-                height="60"
-                viewBox="0 0 60 68"
-                fill="none"
-                opacity="0.35"
-              >
-                <ellipse cx="30" cy="14" rx="10" ry="13" fill="#d4607a" />
-                <ellipse
-                  cx="30"
-                  cy="14"
-                  rx="10"
-                  ry="13"
-                  transform="rotate(60 30 32)"
-                  fill="#c8de9d"
-                />
-                <ellipse
-                  cx="30"
-                  cy="14"
-                  rx="10"
-                  ry="13"
-                  transform="rotate(120 30 32)"
-                  fill="#d4607a"
-                />
-                <ellipse cx="30" cy="50" rx="10" ry="13" fill="#c8de9d" />
-                <ellipse
-                  cx="30"
-                  cy="50"
-                  rx="10"
-                  ry="13"
-                  transform="rotate(60 30 32)"
-                  fill="#d4607a"
-                />
-                <ellipse
-                  cx="30"
-                  cy="50"
-                  rx="10"
-                  ry="13"
-                  transform="rotate(120 30 32)"
-                  fill="#c8de9d"
-                />
-                <circle cx="30" cy="32" r="10" fill="#f7c9d4" />
-              </svg>
-              <p>Search for a pattern to get started</p>
+              <p>Search for a pattern to get started!</p>
               <span className="empty-hint">
-                Try "cozy sweater", "amigurumi", or "beginner scarf"
+                Try "cozy sweater", "cute flower", or "beginner scarf"
               </span>
             </div>
           )}
 
-          {hasSearch && !hasResults && !showLoading && (
+          {/* no results */}
+          {showNoResults && (
             <div className="empty-state">
-              <p>No patterns found for "{searchTerm}"</p>
+              <p>
+                No patterns found for "{searchTerm}"
+                {skillFilter ? ` in ${skillFilter}` : ""}
+              </p>
               <span className="empty-hint">
                 Try a different search term or remove the skill filter
               </span>
             </div>
           )}
 
-          {patterns.map((pattern, index) => (
-            <PolaroidCard key={index} pattern={pattern} index={index} />
-          ))}
+          {/* results */}
+          {resolved &&
+            patterns.map((pattern, index) => (
+              <PolaroidCard key={index} pattern={pattern} index={index} />
+            ))}
         </div>
 
         {/* chat */}
@@ -399,12 +363,6 @@ function App(): JSX.Element {
           <span className="app-footer-copy">
             © 2026 Loopsie Daisy. Stitched with love.
           </span>
-          {/* <nav className="app-footer-links">
-            <a href="#">About</a>
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Contact</a>
-          </nav> */}
         </footer>
       </div>
     </>
