@@ -213,6 +213,14 @@ function PolaroidCard({
       <Pin colorClass={pin} />
       <div className="polaroid-card">
         <div className="polaroid-img-wrap">
+          {/* <img
+            src={
+              new URL(`./assets/images/${pattern.image_path}`, import.meta.url)
+                .href
+            }
+            alt={pattern.title}
+            className="polaroid-card-img"
+          /> */}
           <img
             loading="lazy"
             decoding="async"
