@@ -311,8 +311,10 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 44px 20px 80px;
-  columns: 4 210px;
-  column-gap: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0;
   position: relative;
   z-index: 1;
 }
@@ -324,6 +326,7 @@
   width: 100%;
   break-inside: avoid;
   padding: 30px 12px 12px;
+  margin-bottom: 16px;
   position: relative;
   transition: transform 0.25s ease;
   z-index: 1;
