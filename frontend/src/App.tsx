@@ -165,8 +165,16 @@ const PINS = [
   "pin-deep",
 ] as const;
 
-function cardStyle(index: number) {
-  return { tilt: TILTS[index % TILTS.length], pin: PINS[index % PINS.length] };
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++)
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function cardStyle(pattern: Pattern) {
+  const h = hashStr(pattern.title + pattern.pattern_link);
+  return { tilt: TILTS[h % TILTS.length], pin: PINS[(h >> 3) % PINS.length] };
 }
 
 /* skill */
@@ -191,7 +199,7 @@ function Pin({ colorClass }: { colorClass: string }) {
 /* polaroid card */
 
 function PolaroidCard({ pattern, index }: { pattern: Pattern; index: number }) {
-  const { tilt, pin } = useMemo(() => cardStyle(index), [index]);
+  const { tilt, pin } = useMemo(() => cardStyle(pattern), [pattern]);
   return (
     <div className={`polaroid-wrapper ${tilt}`}>
       <Pin colorClass={pin} />
@@ -251,7 +259,23 @@ function App(): JSX.Element {
   const [topK, setTopK] = useState<number>(100);
   const [resolved, setResolved] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [numCols, setNumCols] = useState(4);
   const [isFadingOut, setIsFadingOut] = useState(false);
+
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board) return;
+    const measure = () => {
+      const w = board.offsetWidth;
+      // Mirror the CSS: columns: 4 210px — fit as many 210px cols as possible, max 4
+      setNumCols(Math.min(4, Math.max(1, Math.floor(w / 210))));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(board);
+    return () => ro.disconnect();
+  }, []);
   // const fetchedDataRef = useRef<Pattern[] | null>(null);
   // const loadingDoneRef = useRef(false);
 
@@ -569,7 +593,7 @@ function App(): JSX.Element {
         </div>
 
         {/* polaroid pinboard */}
-        <div className="patterns-board">
+        <div className="patterns-board" ref={boardRef}>
           {!hasSearch && (
             <div className="empty-state">
               <p>Search for a pattern to get started!</p>
@@ -592,9 +616,33 @@ function App(): JSX.Element {
           )}
 
           {resolved &&
-            patterns.map((pattern, index) => (
-              <PolaroidCard key={index} pattern={pattern} index={index} />
-            ))}
+            (() => {
+              const sorted = [...patterns].sort((a, b) => b.score - a.score);
+              const cols: (typeof sorted)[] = Array.from(
+                { length: numCols },
+                () => [],
+              );
+              sorted.forEach((p, i) => cols[i % numCols].push(p));
+              return cols.map((col, ci) => (
+                <div
+                  key={ci}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: "1 1 210px",
+                    minWidth: 0,
+                  }}
+                >
+                  {col.map((pattern, row) => (
+                    <PolaroidCard
+                      key={`${ci}-${row}`}
+                      pattern={pattern}
+                      index={ci + row * numCols}
+                    />
+                  ))}
+                </div>
+              ));
+            })()}
         </div>
 
         {useLlm && <Chat onSearchTerm={handleChatSearch} />}
