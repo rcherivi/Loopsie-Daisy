@@ -44,6 +44,107 @@ function Daisy({
   );
 }
 
+function BgDaisy({
+  x,
+  y,
+  size,
+  color,
+}: {
+  x: string;
+  y: string;
+  size: number;
+  color: string;
+}) {
+  const c = size / 2;
+  const pr = size * 0.28;
+  const pd = size * 0.22;
+  const cr = size * 0.14;
+
+  const petals = Array.from({ length: 5 }, (_, i) => {
+    const angle = (i * 72 - 90) * (Math.PI / 180);
+    return (
+      <circle
+        key={i}
+        cx={c + Math.cos(angle) * pd}
+        cy={c + Math.sin(angle) * pd}
+        r={pr}
+        fill={color}
+      />
+    );
+  });
+
+  return (
+    <svg
+      className="bg-daisy"
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      style={{ left: x, top: y }}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {petals}
+      <circle cx={c} cy={c} r={cr} fill="#f9e07a" />
+    </svg>
+  );
+}
+
+function BgDaisies() {
+  const daisies = [
+    { x: "-60px", y: "5%", size: 260, color: "#f7c9d4" },
+    { x: "72%", y: "-40px", size: 220, color: "#c8de9d" },
+    { x: "88%", y: "28%", size: 180, color: "#f7c9d4" },
+    { x: "10%", y: "38%", size: 200, color: "#e0eea3" },
+    { x: "55%", y: "52%", size: 240, color: "#f7c9d4" },
+    { x: "-30px", y: "68%", size: 190, color: "#c8de9d" },
+    { x: "80%", y: "72%", size: 210, color: "#e0eea3" },
+    { x: "35%", y: "82%", size: 170, color: "#f7c9d4" },
+    { x: "27%", y: "25%", size: 100, color: "#e0eea3" },
+    { x: "40%", y: "25%", size: 200, color: "#f7c9d4" },
+    { x: "30%", y: "50%", size: 150, color: "#f7c9d4" },
+    { x: "70%", y: "40%", size: 150, color: "#e0eea3" },
+  ];
+
+  return (
+    <div className="bg-daisies" aria-hidden="true">
+      {daisies.map((d, i) => (
+        <BgDaisy key={i} {...d} />
+      ))}
+    </div>
+  );
+}
+
+/* top-k selector */
+
+const TOPK_OPTIONS = [
+  { label: "All", value: 100 },
+  { label: "10", value: 10 },
+  { label: "20", value: 20 },
+  { label: "30", value: 30 },
+];
+
+function TopKSelector({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <div className="topk-row">
+      <span className="topk-label">Top Patterns:</span>
+      {TOPK_OPTIONS.map(({ label, value: n }) => (
+        <button
+          key={n}
+          className={`topk-pill ${value === n ? "active" : ""}`}
+          onClick={() => onChange(n)}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /* card tilt */
 
 const TILTS = [
@@ -68,7 +169,7 @@ function cardStyle(index: number) {
   return { tilt: TILTS[index % TILTS.length], pin: PINS[index % PINS.length] };
 }
 
-/* skill*/
+/* skill */
 
 function SkillBadge({ level }: { level: string }) {
   if (!level) return <span className="skill-badge none">no level</span>;
@@ -96,7 +197,17 @@ function PolaroidCard({ pattern, index }: { pattern: Pattern; index: number }) {
       <Pin colorClass={pin} />
       <div className="polaroid-card">
         <div className="polaroid-img-wrap">
+          {/* <img
+            src={
+              new URL(`./assets/images/${pattern.image_path}`, import.meta.url)
+                .href
+            }
+            alt={pattern.title}
+            className="polaroid-card-img"
+          /> */}
           <img
+            loading="lazy"
+            decoding="async"
             src={
               new URL(`./assets/images/${pattern.image_path}`, import.meta.url)
                 .href
@@ -137,12 +248,12 @@ function App(): JSX.Element {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [skillFilter, setSkillFilter] = useState<string>("");
   const [showLoading, setShowLoading] = useState(false);
-
+  const [topK, setTopK] = useState<number>(100);
   const [resolved, setResolved] = useState(false);
-
   const inputRef = useRef<HTMLInputElement>(null);
-  const fetchedDataRef = useRef<Pattern[] | null>(null);
-  const loadingDoneRef = useRef(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+  // const fetchedDataRef = useRef<Pattern[] | null>(null);
+  // const loadingDoneRef = useRef(false);
 
   useEffect(() => {
     fetch("/api/config")
@@ -156,71 +267,152 @@ function App(): JSX.Element {
     setShowLoading(false);
   }, []);
 
+  // const runFetch = useCallback(
+  //   async (text: string, skill: string, k: number) => {
+  //     fetchedDataRef.current = null;
+  //     loadingDoneRef.current = false;
+
+  //     const params = new URLSearchParams();
+  //     if (text.trim() !== "") params.append("title", text);
+  //     if (skill.trim() !== "") params.append("skill", skill);
+  //     params.append("top_k", String(k));
+
+  //     const res = await fetch(`/api/patterns?${params.toString()}`);
+  //     const data: Pattern[] = await res.json();
+
+  //     if (loadingDoneRef.current) {
+  //       applyResults(data);
+  //     } else {
+  //       fetchedDataRef.current = data;
+  //     }
+  //   },
+  //   [applyResults],
+  // );
+  // const runFetch = useCallback(
+  //   async (text: string, skill: string, k: number) => {
+  //     // setShowLoading(true);
+  //     const start = Date.now();
+
+  //     const params = new URLSearchParams();
+  //     if (text.trim() !== "") params.append("title", text);
+  //     if (skill.trim() !== "") params.append("skill", skill);
+  //     params.append("top_k", String(k));
+
+  //     try {
+  //       const res = await fetch(`/api/patterns?${params.toString()}`);
+  //       const data: Pattern[] = await res.json();
+
+  //       const elapsed = Date.now() - start;
+  //       const delay = Math.max(0, 800 - elapsed);
+  //       await new Promise((r) => setTimeout(r, delay));
+
+  //       setPatterns(data);
+  //       setResolved(true);
+  //     } catch (err) {
+  //       setPatterns([]);
+  //       setResolved(true);
+  //     } finally {
+  //       // setShowLoading(false);
+  //       setIsFadingOut(true);
+  //       setTimeout(() => {
+  //         setShowLoading(false);
+  //         setIsFadingOut(false);
+  //       }, 300);
+  //     }
+  //   },
+  //   [],
+  // );
   const runFetch = useCallback(
-    async (text: string, skill: string) => {
-      fetchedDataRef.current = null;
-      loadingDoneRef.current = false;
+    async (text: string, skill: string, k: number) => {
+      const start = Date.now();
 
       const params = new URLSearchParams();
       if (text.trim() !== "") params.append("title", text);
       if (skill.trim() !== "") params.append("skill", skill);
+      params.append("top_k", String(k));
 
-      const res = await fetch(`/api/patterns?${params.toString()}`);
-      const data: Pattern[] = await res.json();
+      try {
+        const res = await fetch(`/api/patterns?${params.toString()}`);
+        const data: Pattern[] = await res.json();
 
-      if (loadingDoneRef.current) {
-        applyResults(data);
-      } else {
-        fetchedDataRef.current = data;
+        const elapsed = Date.now() - start;
+        const minDisplay = 600;
+        const delay = Math.max(0, minDisplay - elapsed);
+        await new Promise((r) => setTimeout(r, delay));
+
+        setPatterns(data);
+        setResolved(true);
+      } catch {
+        setPatterns([]);
+        setResolved(true);
+      } finally {
+        setIsFadingOut(true);
+
+        setTimeout(() => {
+          setShowLoading(false);
+          setIsFadingOut(false);
+        }, 300);
       }
     },
-    [applyResults],
+    [],
   );
 
-  const handleLoadingDone = useCallback(() => {
-    loadingDoneRef.current = true;
-    if (fetchedDataRef.current !== null) {
-      applyResults(fetchedDataRef.current);
-      fetchedDataRef.current = null;
-    }
-  }, [applyResults]);
+  // const handleLoadingDone = useCallback(() => {
+  //   loadingDoneRef.current = true;
+  //   if (fetchedDataRef.current !== null) {
+  //     applyResults(fetchedDataRef.current);
+  //     fetchedDataRef.current = null;
+  //   }
+  // }, [applyResults]);
 
+  // const submitSearch = useCallback(
+  //   (text: string, skill: string, k = topK) => {
+  //     if (text.trim() === "") return;
+  //     setSearchTerm(text);
+  //     setResolved(false);
+  //     setPatterns([]);
+  //     setShowLoading(true);
+  //     runFetch(text, skill, k);
+  //   },
+  //   [runFetch, topK],
+  // );
   const submitSearch = useCallback(
-    (text: string, skill: string) => {
+    (text: string, skill: string, k = topK) => {
       if (text.trim() === "") return;
+
       setSearchTerm(text);
       setResolved(false);
       setPatterns([]);
+
+      setIsFadingOut(false);
       setShowLoading(true);
-      runFetch(text, skill);
+
+      runFetch(text, skill, k);
     },
-    [runFetch],
+    [runFetch, topK],
   );
 
   const handleSkillChange = useCallback(
     (level: string) => {
       setSkillFilter(level);
       if (searchTerm.trim() === "") return;
-
-      setResolved(false);
-      setPatterns([]);
-
-      const doFetch = async () => {
-        const params = new URLSearchParams();
-        if (searchTerm.trim() !== "") params.append("title", searchTerm);
-        if (level.trim() !== "") params.append("skill", level);
-        const res = await fetch(`/api/patterns?${params.toString()}`);
-        const data: Pattern[] = await res.json();
-        setPatterns(data);
-        setResolved(true);
-      };
-      doFetch();
+      submitSearch(searchTerm, level, topK);
     },
-    [searchTerm],
+    [searchTerm, topK, submitSearch],
+  );
+
+  const handleTopKChange = useCallback(
+    (k: number) => {
+      setTopK(k);
+      if (searchTerm.trim() !== "") {
+        submitSearch(searchTerm, skillFilter, k);
+      }
+    },
+    [searchTerm, skillFilter, submitSearch],
   );
 
   const handleSubmit = useCallback(() => {
-    submitSearch(inputValue, skillFilter);
+    submitSearch(inputValue, skillFilter, topK);
   }, [inputValue, skillFilter, submitSearch]);
 
   const handleKeyDown = useCallback(
@@ -235,7 +427,7 @@ function App(): JSX.Element {
     setSearchTerm("");
     setPatterns([]);
     setResolved(false);
-    fetchedDataRef.current = null;
+    // fetchedDataRef.current = null;
     setTimeout(() => inputRef.current?.focus(), 0);
   }, []);
 
@@ -252,35 +444,28 @@ function App(): JSX.Element {
   const hasSearch = searchTerm.trim() !== "";
   const showNoResults = hasSearch && resolved && patterns.length === 0;
 
-  console.log("DEBUG:", {
-    hasSearch,
-    resolved,
-    patterns,
-    length: patterns.length,
-  });
-
   return (
     <>
-      {showLoading &&
-        createPortal(
-          <LoadingScreen onDone={handleLoadingDone} />,
-          document.body,
-        )}
+      {/* {showLoading || isFadingOut) &&
+        (isFadingOut &&
+          createPortal(
+            // <LoadingScreen onDone={handleLoadingDone} />,
+            <LoadingScreen fading={isFadingOut} />,
+            document.body,
+          ))} */}
+      {(showLoading || isFadingOut) &&
+        createPortal(<LoadingScreen fading={isFadingOut} />, document.body)}
 
       <div className={`full-body-container ${useLlm ? "llm-mode" : ""}`}>
-        {/* header */}
-        {/* <header className="app-header">
-          <span className="app-header-logo">Loopsie Daisy</span>
-          <div className="app-header-icons" />
-        </header> */}
+        <BgDaisies />
+
         <header className="app-header">
           <div className="logo-container">
             <span className="app-header-logo">Loopsie Daisy</span>
-            <Daisy petalColor="#fdffdc" size={32} />
+            {/* <Daisy petalColor="#fdffdc" size={32} />
             <Daisy petalColor="#f8f3f2" size={32} />
-            <Daisy petalColor="#edf9b5" size={32} />
+            <Daisy petalColor="#edf9b5" size={32} /> */}
           </div>
-
           <div className="header-flowers" />
           <div className="app-header-icons" />
         </header>
@@ -306,7 +491,7 @@ function App(): JSX.Element {
               <input
                 ref={inputRef}
                 id="search-input"
-                placeholder="Search for patterns (eg. wavy beachy blue tote bag)"
+                placeholder="Search for patterns"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -345,12 +530,6 @@ function App(): JSX.Element {
             </button>
           </div>
 
-          {hasSearch && (
-            <p className="active-search-label">
-              Showing results for <strong>"{searchTerm}"</strong>
-            </p>
-          )}
-
           <div className="filter-row">
             <button
               className={`filter-pill ${skillFilter === "" ? "active" : ""}`}
@@ -370,21 +549,36 @@ function App(): JSX.Element {
               ),
             )}
           </div>
+
+          {hasSearch && (
+            <p className="active-search-label">
+              Showing results for{" "}
+              <strong>
+                "{searchTerm}" · {}
+              </strong>
+              <strong>
+                {patterns.length}{" "}
+                {patterns.length === 1 ? "pattern" : "patterns"}
+              </strong>{" "}
+              found
+            </p>
+          )}
         </section>
+        <div className="topk-container">
+          <TopKSelector value={topK} onChange={handleTopKChange} />
+        </div>
 
         {/* polaroid pinboard */}
         <div className="patterns-board">
-          {/* default */}
           {!hasSearch && (
             <div className="empty-state">
               <p>Search for a pattern to get started!</p>
               <span className="empty-hint">
-                Try "cozy sweater", "cute flower", or "beginner scarf"
+                Try "wavy beachy blue tote bag", "scary halloween doll"
               </span>
             </div>
           )}
 
-          {/* no results */}
           {showNoResults && (
             <div className="empty-state">
               <p>
@@ -397,17 +591,14 @@ function App(): JSX.Element {
             </div>
           )}
 
-          {/* results */}
           {resolved &&
             patterns.map((pattern, index) => (
               <PolaroidCard key={index} pattern={pattern} index={index} />
             ))}
         </div>
 
-        {/* chat */}
         {useLlm && <Chat onSearchTerm={handleChatSearch} />}
 
-        {/* footer */}
         <footer className="app-footer">
           <span className="app-footer-logo">Loopsie Daisy</span>
           <span className="app-footer-copy">

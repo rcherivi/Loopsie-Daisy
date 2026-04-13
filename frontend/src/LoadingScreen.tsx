@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import "./LoadingScreen.css";
 
 interface Props {
-  onDone: () => void;
+  // onDone: () => void;
+  fading?: boolean;
 }
 
 function Daisy({
@@ -51,27 +52,28 @@ const FLOWERS = [
   "#e0eea3", // Tidal lime
 ];
 
-export default function LoadingScreen({ onDone }: Props): JSX.Element {
+// export default function LoadingScreen({ onDone }: Props): JSX.Element {
+export default function LoadingScreen({ fading }: Props): JSX.Element {
+  console.log("LoadingScreen rendered", fading);
   const [dotCount, setDotCount] = useState(1);
-  const [fading, setFading] = useState(false);
 
-  const onDoneRef = useRef(onDone);
-  useEffect(() => {
-    onDoneRef.current = onDone;
-  }, [onDone]);
+  // const onDoneRef = useRef(onDone);
+  // useEffect(() => {
+  //   onDoneRef.current = onDone;
+  // }, [onDone]);
 
   useEffect(() => {
     const id = setInterval(() => setDotCount((d) => (d % 3) + 1), 500);
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    const dismiss = setTimeout(() => {
-      setFading(true);
-      setTimeout(() => onDoneRef.current(), 350);
-    }, 1400);
-    return () => clearTimeout(dismiss);
-  }, []);
+  // useEffect(() => {
+  //   const dismiss = setTimeout(() => {
+  //     setFading(true);
+  //     setTimeout(() => onDoneRef.current(), 350);
+  //   }, 1400);
+  //   return () => clearTimeout(dismiss);
+  // }, []);
 
   return (
     <div className={`loading-screen${fading ? " fade-out" : ""}`}>
@@ -118,7 +120,7 @@ export default function LoadingScreen({ onDone }: Props): JSX.Element {
         {/* <p className="loading-subtitle">
           Gently stitching your creative world...
         </p> */}
-        <p className="loading-tagline">Est. 2026 &bull; Petal &amp; Purl</p>
+        {/* <p className="loading-tagline">Est. 2026 &bull; Petal &amp; Purl</p> */}
       </main>
 
       <footer className="loading-footer">
