@@ -95,15 +95,7 @@ def json_search():
     formatted_results = []
     for item in raw_results:
         p = item["pattern_obj"]
-        formatted_results.append({
-            "title": p.title,
-            "description": p.description,
-            "skill_level": p.skill_level,
-            "pattern_link": p.pattern_link,
-            "final_description": p.final_description,
-            "image_path": p.image_path,
-            "score": float(item["score"])
-        })
+        formatted_results.append(p.to_dict(score=float(item["score"])))
 
     return formatted_results
 
@@ -128,9 +120,35 @@ def register_routes(app):
 
     @app.route("/api/patterns")
     def patterns_search():
-        # text = request.args.get("title", "")
-        # return jsonify(json_search(text))
         return jsonify(json_search())
+
+    @app.route("/api/patterns/trending")
+    def patterns_trending():
+        top_k = request.args.get("top_k", default=12, type=int)
+        patterns = Pattern.query.order_by(
+            (Pattern.upvotes - Pattern.downvotes).desc(),
+            Pattern.upvotes.desc()
+        ).limit(top_k).all()
+        return jsonify([p.to_dict() for p in patterns])
+
+    @app.route("/api/patterns/<int:pattern_id>/vote", methods=["POST"])
+    def vote_pattern(pattern_id):
+        data = request.get_json()
+        vote_type = data.get("vote")  # 'up' or 'down'
+        pattern = Pattern.query.get_or_404(pattern_id)
+        if vote_type == "up":
+            pattern.upvotes += 1
+        elif vote_type == "down":
+            pattern.downvotes += 1
+        else:
+            return jsonify({"error": "Invalid vote type"}), 400
+        db.session.commit()
+        return jsonify({
+            "id": pattern.id,
+            "upvotes": pattern.upvotes,
+            "downvotes": pattern.downvotes,
+            "vote_score": pattern.vote_score,
+        })
 
 
     @app.route('/images/<path:filename>')
