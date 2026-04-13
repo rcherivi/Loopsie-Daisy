@@ -6,43 +6,43 @@ import Chat from "./Chat";
 import LoadingScreen from "./LoadingScreen";
 
 // daisy
-function Daisy({
-  petalColor,
-  size = 64,
-}: {
-  petalColor: string;
-  size?: number;
-}) {
-  const c = size / 2;
-  const pr = size * 0.28;
-  const pd = size * 0.22;
-  const cr = size * 0.14;
+// function Daisy({
+//   petalColor,
+//   size = 64,
+// }: {
+//   petalColor: string;
+//   size?: number;
+// }) {
+//   const c = size / 2;
+//   const pr = size * 0.28;
+//   const pd = size * 0.22;
+//   const cr = size * 0.14;
 
-  const petals = Array.from({ length: 5 }, (_, i) => {
-    const angle = (i * 72 - 90) * (Math.PI / 180);
-    return (
-      <circle
-        key={i}
-        cx={c + Math.cos(angle) * pd}
-        cy={c + Math.sin(angle) * pd}
-        r={pr}
-        fill={petalColor}
-      />
-    );
-  });
+//   const petals = Array.from({ length: 5 }, (_, i) => {
+//     const angle = (i * 72 - 90) * (Math.PI / 180);
+//     return (
+//       <circle
+//         key={i}
+//         cx={c + Math.cos(angle) * pd}
+//         cy={c + Math.sin(angle) * pd}
+//         r={pr}
+//         fill={petalColor}
+//       />
+//     );
+//   });
 
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {petals}
-      <circle cx={c} cy={c} r={cr} fill="#f9e07a" />
-    </svg>
-  );
-}
+//   return (
+//     <svg
+//       width={size}
+//       height={size}
+//       viewBox={`0 0 ${size} ${size}`}
+//       xmlns="http://www.w3.org/2000/svg"
+//     >
+//       {petals}
+//       <circle cx={c} cy={c} r={cr} fill="#f9e07a" />
+//     </svg>
+//   );
+// }
 
 function BgDaisy({
   x,
@@ -341,11 +341,11 @@ function App(): JSX.Element {
       .catch(() => {});
   }, []);
 
-  const applyResults = useCallback((data: Pattern[]) => {
-    setPatterns(data);
-    setResolved(true);
-    setShowLoading(false);
-  }, []);
+  // const applyResults = useCallback((data: Pattern[]) => {
+  //   setPatterns(data);
+  //   setResolved(true);
+  //   setShowLoading(false);
+  // }, []);
 
   // const runFetch = useCallback(
   //   async (text: string, skill: string, k: number) => {
