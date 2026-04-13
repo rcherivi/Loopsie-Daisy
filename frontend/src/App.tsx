@@ -200,7 +200,6 @@ function Pin({ colorClass }: { colorClass: string }) {
 
 function PolaroidCard({
   pattern,
-  index,
   onVote,
 }: {
   pattern: Pattern;
@@ -213,14 +212,6 @@ function PolaroidCard({
       <Pin colorClass={pin} />
       <div className="polaroid-card">
         <div className="polaroid-img-wrap">
-          {/* <img
-            src={
-              new URL(`./assets/images/${pattern.image_path}`, import.meta.url)
-                .href
-            }
-            alt={pattern.title}
-            className="polaroid-card-img"
-          /> */}
           <img
             loading="lazy"
             decoding="async"
@@ -561,401 +552,6 @@ function App(): JSX.Element {
         {/* hero landing section */}
         <section className="hero-section">
           {/* watercolor daisies background */}
-          <svg
-            className="hero-daisies-bg"
-            viewBox="0 0 1440 900"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-            preserveAspectRatio="xMidYMid slice"
-          >
-            {/* helper: each daisy is stem + optional bud + flower head */}
-            {/* BOTTOM LEFT cluster — drooping from top-left corner */}
-            {/* stem 1 */}
-            <path
-              d="M80 0 C76 80 68 160 60 240"
-              stroke="#9db870"
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M60 240 C56 300 50 340 44 390"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            {/* small leaf */}
-            <path
-              d="M68 190 C50 178 38 178 36 188 C50 194 64 194 68 190Z"
-              fill="#b0c878"
-              opacity="0.55"
-            />
-            {/* flower 1 — large white, drooping */}
-            <g transform="translate(44,390)">
-              {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((a, i) => (
-                <ellipse
-                  key={i}
-                  cx={Math.cos(((a - 90) * Math.PI) / 180) * 22}
-                  cy={Math.sin(((a - 90) * Math.PI) / 180) * 22}
-                  rx="7"
-                  ry="16"
-                  fill="white"
-                  opacity="0.82"
-                  transform={`rotate(${a},${Math.cos(((a - 90) * Math.PI) / 180) * 22},${Math.sin(((a - 90) * Math.PI) / 180) * 22})`}
-                />
-              ))}
-              <circle cx="0" cy="0" r="12" fill="#f0c080" opacity="0.85" />
-              <circle cx="0" cy="0" r="7" fill="#e8a855" opacity="0.9" />
-            </g>
-            {/* stem 2 — shorter beside */}
-            <path
-              d="M130 0 C126 60 120 120 115 185"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            {/* small bud */}
-            <g transform="translate(115,185)">
-              <ellipse
-                cx="0"
-                cy="-8"
-                rx="5"
-                ry="9"
-                fill="#c8d890"
-                opacity="0.7"
-              />
-              <path
-                d="M-5 -4 C-8 -12 8 -12 5 -4"
-                fill="#b0c870"
-                opacity="0.6"
-              />
-            </g>
-            {/* stem 3 */}
-            <path
-              d="M200 0 C196 70 188 140 180 220"
-              stroke="#9db870"
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M180 220 C176 280 170 340 162 420"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M174 280 C156 268 144 268 142 278 C156 284 170 284 174 280Z"
-              fill="#b0c878"
-              opacity="0.5"
-            />
-            {/* flower 2 — medium white */}
-            <g transform="translate(162,420)">
-              {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((a, i) => (
-                <ellipse
-                  key={i}
-                  cx={Math.cos(((a - 90) * Math.PI) / 180) * 18}
-                  cy={Math.sin(((a - 90) * Math.PI) / 180) * 18}
-                  rx="6"
-                  ry="13"
-                  fill="white"
-                  opacity="0.78"
-                  transform={`rotate(${a},${Math.cos(((a - 90) * Math.PI) / 180) * 18},${Math.sin(((a - 90) * Math.PI) / 180) * 18})`}
-                />
-              ))}
-              <circle cx="0" cy="0" r="10" fill="#f0c080" opacity="0.82" />
-              <circle cx="0" cy="0" r="6" fill="#e8a855" opacity="0.88" />
-            </g>
-
-            {/* TOP RIGHT cluster — drooping from top-right */}
-            <path
-              d="M1360 0 C1356 80 1348 160 1340 250"
-              stroke="#9db870"
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M1340 250 C1336 310 1330 370 1322 440"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M1334 200 C1352 188 1364 188 1366 198 C1352 204 1338 204 1334 200Z"
-              fill="#b0c878"
-              opacity="0.55"
-            />
-            {/* flower R1 */}
-            <g transform="translate(1322,440)">
-              {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((a, i) => (
-                <ellipse
-                  key={i}
-                  cx={Math.cos(((a - 90) * Math.PI) / 180) * 22}
-                  cy={Math.sin(((a - 90) * Math.PI) / 180) * 22}
-                  rx="7"
-                  ry="16"
-                  fill="white"
-                  opacity="0.82"
-                  transform={`rotate(${a},${Math.cos(((a - 90) * Math.PI) / 180) * 22},${Math.sin(((a - 90) * Math.PI) / 180) * 22})`}
-                />
-              ))}
-              <circle cx="0" cy="0" r="12" fill="#f0c080" opacity="0.85" />
-              <circle cx="0" cy="0" r="7" fill="#e8a855" opacity="0.9" />
-            </g>
-            <path
-              d="M1290 0 C1288 55 1284 110 1280 170"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            {/* small bud R */}
-            <g transform="translate(1280,170)">
-              <ellipse
-                cx="0"
-                cy="-8"
-                rx="5"
-                ry="9"
-                fill="#c8d890"
-                opacity="0.7"
-              />
-              <path
-                d="M-5 -4 C-8 -12 8 -12 5 -4"
-                fill="#b0c870"
-                opacity="0.6"
-              />
-            </g>
-            <path
-              d="M1420 0 C1418 70 1414 140 1408 210"
-              stroke="#9db870"
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M1408 210 C1404 275 1398 345 1390 420"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M1402 270 C1420 258 1432 258 1434 268 C1420 274 1406 274 1402 270Z"
-              fill="#b0c878"
-              opacity="0.5"
-            />
-            {/* flower R2 */}
-            <g transform="translate(1390,420)">
-              {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((a, i) => (
-                <ellipse
-                  key={i}
-                  cx={Math.cos(((a - 90) * Math.PI) / 180) * 19}
-                  cy={Math.sin(((a - 90) * Math.PI) / 180) * 19}
-                  rx="6"
-                  ry="14"
-                  fill="white"
-                  opacity="0.8"
-                  transform={`rotate(${a},${Math.cos(((a - 90) * Math.PI) / 180) * 19},${Math.sin(((a - 90) * Math.PI) / 180) * 19})`}
-                />
-              ))}
-              <circle cx="0" cy="0" r="11" fill="#f0c080" opacity="0.83" />
-              <circle cx="0" cy="0" r="6" fill="#e8a855" opacity="0.88" />
-            </g>
-
-            {/* BOTTOM cluster — growing upward from bottom */}
-            <path
-              d="M340 900 C338 830 330 760 320 680"
-              stroke="#9db870"
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M320 680 C316 620 310 555 300 490"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M312 630 C294 618 282 620 280 630 C294 636 308 636 312 630Z"
-              fill="#b0c878"
-              opacity="0.5"
-            />
-            {/* flower B1 */}
-            <g transform="translate(300,490)">
-              {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((a, i) => (
-                <ellipse
-                  key={i}
-                  cx={Math.cos(((a - 90) * Math.PI) / 180) * 20}
-                  cy={Math.sin(((a - 90) * Math.PI) / 180) * 20}
-                  rx="6.5"
-                  ry="14"
-                  fill="white"
-                  opacity="0.8"
-                  transform={`rotate(${a},${Math.cos(((a - 90) * Math.PI) / 180) * 20},${Math.sin(((a - 90) * Math.PI) / 180) * 20})`}
-                />
-              ))}
-              <circle cx="0" cy="0" r="11" fill="#f0c080" opacity="0.84" />
-              <circle cx="0" cy="0" r="6.5" fill="#e8a855" opacity="0.9" />
-            </g>
-            <path
-              d="M460 900 C460 850 458 800 456 745"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            {/* small bud B */}
-            <g transform="translate(456,745)">
-              <ellipse
-                cx="0"
-                cy="-9"
-                rx="5"
-                ry="10"
-                fill="#c8d890"
-                opacity="0.72"
-              />
-              <path
-                d="M-5 -4 C-8 -14 8 -14 5 -4"
-                fill="#b0c870"
-                opacity="0.6"
-              />
-            </g>
-            <path
-              d="M580 900 C578 830 572 760 562 680"
-              stroke="#9db870"
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M562 680 C558 620 552 555 542 490"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M554 635 C572 622 584 622 586 632 C572 638 558 638 554 635Z"
-              fill="#b0c878"
-              opacity="0.5"
-            />
-            {/* flower B2 */}
-            <g transform="translate(542,490)">
-              {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((a, i) => (
-                <ellipse
-                  key={i}
-                  cx={Math.cos(((a - 90) * Math.PI) / 180) * 17}
-                  cy={Math.sin(((a - 90) * Math.PI) / 180) * 17}
-                  rx="5.5"
-                  ry="12"
-                  fill="white"
-                  opacity="0.76"
-                  transform={`rotate(${a},${Math.cos(((a - 90) * Math.PI) / 180) * 17},${Math.sin(((a - 90) * Math.PI) / 180) * 17})`}
-                />
-              ))}
-              <circle cx="0" cy="0" r="9" fill="#f0c080" opacity="0.82" />
-              <circle cx="0" cy="0" r="5.5" fill="#e8a855" opacity="0.88" />
-            </g>
-
-            {/* BOTTOM RIGHT cluster */}
-            <path
-              d="M1100 900 C1098 830 1092 758 1082 678"
-              stroke="#9db870"
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M1082 678 C1078 618 1072 552 1062 480"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M1074 628 C1092 616 1104 616 1106 626 C1092 632 1078 632 1074 628Z"
-              fill="#b0c878"
-              opacity="0.5"
-            />
-            {/* flower BR1 */}
-            <g transform="translate(1062,480)">
-              {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((a, i) => (
-                <ellipse
-                  key={i}
-                  cx={Math.cos(((a - 90) * Math.PI) / 180) * 21}
-                  cy={Math.sin(((a - 90) * Math.PI) / 180) * 21}
-                  rx="7"
-                  ry="15"
-                  fill="white"
-                  opacity="0.81"
-                  transform={`rotate(${a},${Math.cos(((a - 90) * Math.PI) / 180) * 21},${Math.sin(((a - 90) * Math.PI) / 180) * 21})`}
-                />
-              ))}
-              <circle cx="0" cy="0" r="12" fill="#f0c080" opacity="0.85" />
-              <circle cx="0" cy="0" r="7" fill="#e8a855" opacity="0.9" />
-            </g>
-            <path
-              d="M1230 900 C1230 848 1228 796 1226 740"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <g transform="translate(1226,740)">
-              <ellipse
-                cx="0"
-                cy="-9"
-                rx="5"
-                ry="10"
-                fill="#c8d890"
-                opacity="0.7"
-              />
-              <path
-                d="M-5 -4 C-8 -14 8 -14 5 -4"
-                fill="#b0c870"
-                opacity="0.58"
-              />
-            </g>
-            <path
-              d="M1360 900 C1358 832 1352 762 1342 682"
-              stroke="#9db870"
-              strokeWidth="2"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M1342 682 C1338 622 1332 554 1322 482"
-              stroke="#9db870"
-              strokeWidth="1.8"
-              fill="none"
-              strokeLinecap="round"
-            />
-            {/* flower BR2 */}
-            <g transform="translate(1322,482)">
-              {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((a, i) => (
-                <ellipse
-                  key={i}
-                  cx={Math.cos(((a - 90) * Math.PI) / 180) * 18}
-                  cy={Math.sin(((a - 90) * Math.PI) / 180) * 18}
-                  rx="6"
-                  ry="13"
-                  fill="white"
-                  opacity="0.78"
-                  transform={`rotate(${a},${Math.cos(((a - 90) * Math.PI) / 180) * 18},${Math.sin(((a - 90) * Math.PI) / 180) * 18})`}
-                />
-              ))}
-              <circle cx="0" cy="0" r="10" fill="#f0c080" opacity="0.82" />
-              <circle cx="0" cy="0" r="6" fill="#e8a855" opacity="0.87" />
-            </g>
-          </svg>
-
           <div className="hero-content">
             {/* stems */}
             <path
@@ -1000,16 +596,12 @@ function App(): JSX.Element {
               onClick={() => {
                 const target = searchSectionRef.current;
                 if (!target) return;
-                const headerHeight = 96;
-                const top =
-                  target.getBoundingClientRect().top +
-                  window.scrollY -
-                  headerHeight;
+                const top = target.offsetTop;
                 window.scrollTo({ top, behavior: "smooth" });
               }}
               aria-label="Scroll to search"
             >
-              <span className="hero-scroll-label">Start exploring</span>
+              <span className="hero-scroll-label">Find Patterns</span>
               <span className="hero-scroll-arrow">
                 <svg
                   width="22"
@@ -1120,6 +712,14 @@ function App(): JSX.Element {
             )}
           </div>
 
+          {!hasSearch && (
+            <p className="search-hint-text">
+              Try <em>"wavy beachy blue tote bag"</em>,{" "}
+              <em>"scary halloween doll"</em>, or{" "}
+              <em>"beginner cozy cardigan"</em>
+            </p>
+          )}
+
           {hasSearch && (
             <p className="active-search-label">
               Showing results for{" "}
@@ -1140,40 +740,37 @@ function App(): JSX.Element {
           </div>
         )}
 
-        {/* polaroid pinboard */}
+        {/* trending strip — always visible when no active search */}
+        {!hasSearch && (
+          <div className="featured-section">
+            <p className="featured-label">
+              <span className="featured-label-icon">★</span> Trending patterns
+            </p>
+            {featuredPatterns.length > 0 ? (
+              <div className="featured-scroll">
+                {featuredPatterns.map((pattern, i) => (
+                  <div className="featured-card-wrap" key={i}>
+                    <PolaroidCard
+                      pattern={pattern}
+                      index={i}
+                      onVote={handleVote}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="featured-loading">
+                <span>Loading trending patterns…</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* polaroid pinboard — only when searching */}
         <div
           className={`patterns-board${hasSearch ? "" : " patterns-board-hidden"}`}
           ref={boardRef}
         >
-          {!hasSearch && (
-            <div className="featured-section">
-              <p className="featured-label">
-                <span className="featured-label-icon">★</span> Community
-                favourites
-              </p>
-              {featuredPatterns.length > 0 ? (
-                <div className="featured-scroll">
-                  {featuredPatterns.map((pattern, i) => (
-                    <div className="featured-card-wrap" key={i}>
-                      <PolaroidCard
-                        pattern={pattern}
-                        index={i}
-                        onVote={handleVote}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <p>Search for a pattern to get started!</p>
-                  <span className="empty-hint">
-                    Try "wavy beachy blue tote bag", "scary halloween doll"
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
           {showNoResults && (
             <div className="empty-state">
               <p>
