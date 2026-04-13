@@ -73,7 +73,5 @@ def search(query, skill_filter=""):
       })
 
   results.sort(key = lambda x: x["score"], reverse=True)
-  for x in results:
-    if x["score"] > 0.05:
-      return results
-  # return results[:10]
+  filtered = [x for x in results if x["score"] > 0.05]
+  return filtered[:top_k]

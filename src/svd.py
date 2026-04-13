@@ -107,7 +107,7 @@ def build_svd_matrix(patterns):
 
 
 
-def svd_search(query, skill_filter=""):
+def svd_search(query, skill_filter="", top_k = 10):
     global vectorizer, svd, lsa_matrix, pattern_data
 
     if vectorizer is None or not query.strip():
@@ -151,4 +151,5 @@ def svd_search(query, skill_filter=""):
             })
 
     results.sort(key=lambda x: x["score"], reverse=True)
-    return results[:10]
+    filtered = [x for x in results if x["score"] > 0.05]
+    return filtered[:top_k]
