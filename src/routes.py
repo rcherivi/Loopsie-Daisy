@@ -84,6 +84,7 @@ USE_LLM = False
 #     return scored_matches[:10]
 
 def json_search():
+
     query = request.args.get("title", "")
     skill = request.args.get("skill", "")
     top_k = request.args.get("top_k", default=10, type=int)
