@@ -63,10 +63,10 @@
 
 .app-header-logo {
   font-family: "Pacifico", cursive;
-  font-size: 2rem;
-  font-weight: 1000;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #5a2a36;
-  letter-spacing: 1px;
+  letter-spacing: -0.3px;
 }
 
 .app-header-icons {
@@ -155,11 +155,11 @@
 }
 
 .hero-title {
-  font-family: "Playfair Display", serif;
-  font-size: clamp(2.8rem, 8vw, 5.5rem);
-  font-weight: 700;
+  font-family: "Pacifico", cursive;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-weight: 800;
   color: #5a2a36;
-  letter-spacing: -1px;
+  letter-spacing: 1px;
   margin: 0;
   line-height: 1.05;
   animation: heroFadeIn 1s 0.15s ease both;
@@ -323,6 +323,21 @@
 .search-submit-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.search-hint-text {
+  font-family: "Nunito", sans-serif;
+  font-size: 13px;
+  color: #b08090;
+  margin: 0;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.search-hint-text em {
+  font-style: normal;
+  color: #a0606e;
+  font-weight: 600;
 }
 
 /* active search label */
@@ -745,25 +760,28 @@
 
 .featured-section {
   width: 100%;
-  padding: 8px 0 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 0 40px;
+  position: relative;
+  z-index: 1;
 }
 
 .featured-label {
-  font-family: "Nunito", sans-serif;
-  font-size: 13px;
+  font-family: "Playfair Display", serif;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: #a0606e;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  margin: 0 0 4px 28px;
+  color: #5a2a36;
+  letter-spacing: -0.2px;
+  margin: 0 0 8px 28px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .featured-label-icon {
   color: #d4607a;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .featured-scroll {
@@ -771,11 +789,12 @@
   flex-direction: row;
   gap: 0;
   overflow-x: auto;
-  padding: 12px 20px 24px;
+  padding: 16px 20px 32px;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: #f0b8c8 transparent;
+  align-items: flex-start;
 }
 
 .featured-scroll::-webkit-scrollbar {
@@ -792,6 +811,14 @@
 .featured-card-wrap {
   scroll-snap-align: start;
   flex-shrink: 0;
+  width: 200px;
+}
+
+.featured-loading {
+  padding: 32px 28px;
+  color: #c09098;
+  font-family: "Nunito", sans-serif;
+  font-size: 14px;
 }
 
 /* empty state */
