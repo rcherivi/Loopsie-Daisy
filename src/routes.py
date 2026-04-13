@@ -84,11 +84,13 @@ USE_LLM = False
 #     return scored_matches[:10]
 
 def json_search():
+
     query = request.args.get("title", "")
     skill = request.args.get("skill", "")
+    top_k = request.args.get("top_k", default=10, type=int)
 
     # Ying: use SVD-based search instead of raw TF-IDF
-    raw_results = svd_search(query, skill) or []
+    raw_results = svd_search(query, skill, top_k) or []
 
     formatted_results = []
     for item in raw_results:
