@@ -1,4 +1,5 @@
 export interface Pattern {
+  id?: number;
   title: string;
   description: string;
   skill_level: string;
@@ -6,4 +7,6 @@ export interface Pattern {
   final_description: string;
   image_path: string;
   score: number;
+  upvotes?: number;
+  downvotes?: number;
 }
