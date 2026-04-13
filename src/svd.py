@@ -1,7 +1,7 @@
-# import matplotlib
-# matplotlib.use("agg")
-# import matplotlib.pyplot as plt
-
+import matplotlib
+matplotlib.use("agg")
+import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import normalize
@@ -21,12 +21,8 @@ pattern_data = []
 N_COMPONENTS = 600
 
 
-import numpy as np
-#import matplotlib.pyplot as plt
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.decomposition import TruncatedSVD
-
-""" def plot_optimal_k(patterns, max_k=1000):
+#"""
+def plot_optimal_k(patterns, max_k=1000):
     docs = [f"{p.title or ''} {p.description or ''}" for p in patterns]
 
     vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1, 2), sublinear_tf=True, min_df=2)
@@ -65,7 +61,8 @@ from sklearn.decomposition import TruncatedSVD
 
     for t in [0.5, 0.6, 0.7, 0.8, 0.9]:
         k = np.searchsorted(cumvar, t) + 1
-        print(f"  {int(t*100)}% variance explained at k={k}") """
+        print(f"  {int(t*100)}% variance explained at k={k}")
+# """
 
 def build_svd_matrix(patterns):
     global vectorizer, svd, lsa_matrix, pattern_data
