@@ -60,6 +60,42 @@ def modify_search_query(user_query: str) -> str:
     except Exception as e:
         print(f"LLM query modification failed: {e}")
         return user_query
+    
+def summarize_dim(dim_data):
+    prompt = [
+        {"role": "system", "content": """This is the list of words associated with the latent dimension. Only keep words related to crocheting and knitting patterns scrapped from online websites and remove irrelevant terms such as downloadable, free, etc. Then summarize the theme in this dimension in 2 to 3 words.""" },
+        {"role": "user", "content": "\n".join(dim_data)},
+    ]
+    try:
+        response = client.chat(prompt, stream=False, show_thinking=False)
+        summary = response.get("content", "")
+        return summary.strip()
+    except Exception as e:
+        print(f"LLM dimension summarization failed: {e}")
+        return ""
+    
+
+def summarize_latent_dim(top_3_word_lists):
+    dim_lines = "\n".join([
+        f"Dim {j+1}: {', '.join(words)}"
+        for j, words in enumerate(top_3_word_lists)
+    ])
+
+    prompt = [
+        {"role": "system", "content": "You are a concise semantic labeler. Respond only in the exact format requested."},
+        {"role": "user", "content": (
+            "Below are 3 latent semantic dimensions represented by their top words.\n"
+            "For each dimension, respond with a 1-3 word label capturing the core concept. Remove irrelevant terms such as downloadable, free, etc., avoid repetition, avoid common words such as knitting, crocheting, patterns, textiles, yarn products, yarn and fiber, material variety, etc. These words should aim to describe the general theme or vibe.\n\n"
+            f"{dim_lines}\n\n"
+            "Respond ONLY with a single line in this exact format, no extra text:\n"
+            "[label1, label2, label3]"
+        )}
+    ]
+
+    response = client.chat(prompt, stream=False, show_thinking=False)
+    text = response["content"].strip("[]")
+    labels = [l.strip() for l in text.split(",")]
+    return labels
 
 
 def register_chat_route(app, json_search):
