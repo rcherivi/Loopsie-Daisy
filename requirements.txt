@@ -8,4 +8,5 @@ python-dotenv
 git+https://github.com/MrPeterss/infosci-spark-client.git
 scikit-learn==1.7.2
 matplotlib==3.7.2
-
+# added for LLM use
+infosci-spark-client @ git+https://github.com/MrPeterss/infosci-spark-client.git@20b5e9dc8f9bb3286ee907aba7dd7f4fc4167d79

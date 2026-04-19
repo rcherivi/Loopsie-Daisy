@@ -14,7 +14,10 @@ from flask import request, jsonify, Response, stream_with_context
 from infosci_spark_client import LLMClient
 
 logger = logging.getLogger(__name__)
-
+spark_key = os.getenv("SPARK_API_KEY")
+if not spark_key:
+    raise ValueError("SPARK_API_KEY environment variable is not set!")
+client = LLMClient(api_key=spark_key)
 
 def llm_search_decision(client, user_message):
     """Ask the LLM whether to search the DB and which word to use."""
@@ -41,6 +44,22 @@ def llm_search_decision(client, user_message):
     if re.search(r"\bYES\b", content):
         return True, "Kardashian"
     return False, None
+
+def modify_search_query(user_query: str) -> str:
+    """Uses the LLM to extract core themes and synonyms for better SVD retrieval."""
+    
+    prompt_query_modification = [
+        {"role": "system", "content": "Extract core themes, include synonyms, and remove filler words."},
+        {"role": "user", "content": user_query},
+    ]
+
+    try:
+        response = client.chat(prompt_query_modification, stream=False, show_thinking=False)
+        modified_query = response.get("content", user_query)
+        return modified_query.strip()
+    except Exception as e:
+        print(f"LLM query modification failed: {e}")
+        return user_query
 
 
 def register_chat_route(app, json_search):

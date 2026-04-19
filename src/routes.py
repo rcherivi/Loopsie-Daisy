@@ -11,14 +11,15 @@ import re
 from collections import Counter
 import math
 from ngram_search import ngram_sim, word_overlap_score
+from llm_routes import modify_search_query
 from tfidf_search import build_index, search
 
 # Ying changes
 from svd import build_svd_matrix, svd_search
 
 # ── AI toggle ────────────────────────────────────────────────────────────────
-USE_LLM = False
-# USE_LLM = True
+#USE_LLM = False
+USE_LLM = True
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -85,13 +86,17 @@ USE_LLM = False
 
 def json_search():
 
-    query = request.args.get("title", "")
+    raw_query = request.args.get("title", "")
     skill = request.args.get("skill", "")
     top_k = request.args.get("top_k", default=10, type=int)
 
-    # Ying: use SVD-based search instead of raw TF-IDF
-    raw_results = svd_search(query, skill, top_k) or []
+    if USE_LLM and raw_query:
+        search_query = modify_search_query(raw_query)
+        print(f"Original Query: {raw_query} | Modified for SVD: {search_query}")
+    else:
+        search_query = raw_query
 
+    raw_results = svd_search(search_query, skill, top_k) or []
     formatted_results = []
     for item in raw_results:
         p = item["pattern_obj"]
