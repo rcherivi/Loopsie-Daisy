@@ -10,7 +10,6 @@ import TopKSelector from "./components/TopKSelector";
 import PolaroidCard from "./components/PolaroidCard";
 import DimensionsPanel from "./components/DimensionsPanel";
 
-
 /* app */
 
 function App(): JSX.Element {
@@ -357,17 +356,6 @@ function App(): JSX.Element {
             </button>
           </div>
         </section>
-
-        <header className="app-header">
-          <div className="logo-container">
-            <span className="app-header-logo">Loopsie Daisy</span>
-            {/* <Daisy petalColor="#fdffdc" size={32} />
-            <Daisy petalColor="#f8f3f2" size={32} />
-            <Daisy petalColor="#edf9b5" size={32} /> */}
-          </div>
-          <div className="header-flowers" />
-          <div className="app-header-icons" />
-        </header>
 
         {/* search */}
         <section className="search-section" ref={searchSectionRef}>
