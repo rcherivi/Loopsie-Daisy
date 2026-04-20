@@ -20,6 +20,9 @@ pattern_data = []
 # number of latent dimensions
 N_COMPONENTS = 600
 
+# top dimensions
+top_dimensions = []
+
 
 import numpy as np
 #import matplotlib.pyplot as plt
@@ -98,6 +101,25 @@ def build_svd_matrix(patterns):
     # Normalizing the vectors for cosine similarity for pattern matching stage
     lsa_matrix = normalize(lsa_raw, norm="l2")
 
+    # get top dimensions
+    feature_names = vectorizer.get_feature_names_out()
+
+    # Extract top words per dimension
+    global top_dimensions
+    top_dimensions = []
+
+    TOP_WORDS_PER_DIM = 10
+
+    for i, comp in enumerate(svd.components_):
+        # Get indices of top words for this dimension
+        word_indices = comp.argsort()[::-1][:TOP_WORDS_PER_DIM]
+        words = [feature_names[idx] for idx in word_indices]
+
+        top_dimensions.append({
+            "dimension": i,
+            "words": words
+        })
+
     print(
         f"Index built: {len(docs)} docs | "
         f"vocab={tfidf_matrix.shape[1]} | "
@@ -153,3 +175,8 @@ def svd_search(query, skill_filter="", top_k = 10):
     results.sort(key=lambda x: x["score"], reverse=True)
     filtered = [x for x in results if x["score"] > 0.05]
     return filtered[:top_k]
+
+
+def get_top_dimensions(k=10):
+    global top_dimensions
+    return top_dimensions[:k]

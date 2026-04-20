@@ -71,7 +71,7 @@ export default function PolaroidCard({ pattern, onVote }: Props) {
             loading="lazy"
             decoding="async"
             src={
-              new URL(`./assets/images/${pattern.image_path}`, import.meta.url)
+              new URL(`../assets/images/${pattern.image_path}`, import.meta.url)
                 .href
             }
             alt={pattern.title}

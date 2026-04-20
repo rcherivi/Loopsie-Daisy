@@ -8,290 +8,7 @@ import LoadingScreen from "./LoadingScreen";
 import BgDaisies from "./components/BgDaisies";
 import TopKSelector from "./components/TopKSelector";
 import PolaroidCard from "./components/PolaroidCard";
-
-// daisy
-// function Daisy({
-//   petalColor,
-//   size = 64,
-// }: {
-//   petalColor: string;
-//   size?: number;
-// }) {
-//   const c = size / 2;
-//   const pr = size * 0.28;
-//   const pd = size * 0.22;
-//   const cr = size * 0.14;
-
-//   const petals = Array.from({ length: 5 }, (_, i) => {
-//     const angle = (i * 72 - 90) * (Math.PI / 180);
-//     return (
-//       <circle
-//         key={i}
-//         cx={c + Math.cos(angle) * pd}
-//         cy={c + Math.sin(angle) * pd}
-//         r={pr}
-//         fill={petalColor}
-//       />
-//     );
-//   });
-
-//   return (
-//     <svg
-//       width={size}
-//       height={size}
-//       viewBox={`0 0 ${size} ${size}`}
-//       xmlns="http://www.w3.org/2000/svg"
-//     >
-//       {petals}
-//       <circle cx={c} cy={c} r={cr} fill="#f9e07a" />
-//     </svg>
-//   );
-// }
-
-// function BgDaisy({
-//   x,
-//   y,
-//   size,
-//   color,
-// }: {
-//   x: string;
-//   y: string;
-//   size: number;
-//   color: string;
-// }) {
-//   const c = size / 2;
-//   const pr = size * 0.28;
-//   const pd = size * 0.22;
-//   const cr = size * 0.14;
-
-//   const petals = Array.from({ length: 5 }, (_, i) => {
-//     const angle = (i * 72 - 90) * (Math.PI / 180);
-//     return (
-//       <circle
-//         key={i}
-//         cx={c + Math.cos(angle) * pd}
-//         cy={c + Math.sin(angle) * pd}
-//         r={pr}
-//         fill={color}
-//       />
-//     );
-//   });
-
-//   return (
-//     <svg
-//       className="bg-daisy"
-//       width={size}
-//       height={size}
-//       viewBox={`0 0 ${size} ${size}`}
-//       style={{ left: x, top: y }}
-//       xmlns="http://www.w3.org/2000/svg"
-//     >
-//       {petals}
-//       <circle cx={c} cy={c} r={cr} fill="#f9e07a" />
-//     </svg>
-//   );
-// }
-
-// function BgDaisies() {
-//   const daisies = [
-//     { x: "-60px", y: "5%", size: 260, color: "#f7c9d4" },
-//     { x: "72%", y: "-40px", size: 220, color: "#c8de9d" },
-//     { x: "88%", y: "28%", size: 180, color: "#f7c9d4" },
-//     { x: "10%", y: "38%", size: 200, color: "#e0eea3" },
-//     { x: "55%", y: "52%", size: 240, color: "#f7c9d4" },
-//     { x: "-30px", y: "68%", size: 190, color: "#c8de9d" },
-//     { x: "80%", y: "72%", size: 210, color: "#e0eea3" },
-//     { x: "35%", y: "82%", size: 170, color: "#f7c9d4" },
-//     { x: "27%", y: "25%", size: 100, color: "#e0eea3" },
-//     { x: "40%", y: "25%", size: 200, color: "#f7c9d4" },
-//     { x: "30%", y: "50%", size: 150, color: "#f7c9d4" },
-//     { x: "70%", y: "40%", size: 150, color: "#e0eea3" },
-//   ];
-
-//   return (
-//     <div className="bg-daisies" aria-hidden="true">
-//       {daisies.map((d, i) => (
-//         <BgDaisy key={i} {...d} />
-//       ))}
-//     </div>
-//   );
-// }
-
-// /* top-k selector */
-
-// const TOPK_OPTIONS = [
-//   { label: "All", value: 100 },
-//   { label: "10", value: 10 },
-//   { label: "20", value: 20 },
-//   { label: "30", value: 30 },
-// ];
-
-// function TopKSelector({
-//   value,
-//   onChange,
-// }: {
-//   value: number;
-//   onChange: (n: number) => void;
-// }) {
-//   return (
-//     <div className="topk-row">
-//       <span className="topk-label">Top Patterns:</span>
-//       {TOPK_OPTIONS.map(({ label, value: n }) => (
-//         <button
-//           key={n}
-//           className={`topk-pill ${value === n ? "active" : ""}`}
-//           onClick={() => onChange(n)}
-//         >
-//           {label}
-//         </button>
-//       ))}
-//     </div>
-//   );
-// }
-
-// /* card tilt */
-
-// const TILTS = [
-//   "tilt-l3",
-//   "tilt-l2",
-//   "tilt-l1",
-//   "tilt-0",
-//   "tilt-r1",
-//   "tilt-r2",
-//   "tilt-r3",
-// ] as const;
-// const PINS = [
-//   "pin-rose",
-//   "pin-green",
-//   "pin-blush",
-//   "pin-deco",
-//   "pin-tidal",
-//   "pin-deep",
-// ] as const;
-
-// function hashStr(s: string): number {
-//   let h = 0;
-//   for (let i = 0; i < s.length; i++)
-//     h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
-//   return Math.abs(h);
-// }
-
-// function cardStyle(pattern: Pattern) {
-//   const h = hashStr(pattern.title + pattern.pattern_link);
-//   return { tilt: TILTS[h % TILTS.length], pin: PINS[(h >> 3) % PINS.length] };
-// }
-
-// /* skill */
-
-// function SkillBadge({ level }: { level: string }) {
-//   if (!level) return <span className="skill-badge none">no level</span>;
-//   const normalized = level.toLowerCase();
-//   return <span className={`skill-badge ${normalized}`}>{normalized}</span>;
-// }
-
-// /* push pin */
-
-// function Pin({ colorClass }: { colorClass: string }) {
-//   return (
-//     <div className={`pin ${colorClass}`}>
-//       <div className="pin-head" />
-//       <div className="pin-neck" />
-//     </div>
-//   );
-// }
-
-// /* polaroid card */
-
-// function PolaroidCard({
-//   pattern,
-//   onVote,
-// }: {
-//   pattern: Pattern;
-//   index: number;
-//   onVote?: (id: number, vote: "up" | "down") => void;
-// }) {
-//   const { tilt, pin } = useMemo(() => cardStyle(pattern), [pattern]);
-//   return (
-//     <div className={`polaroid-wrapper ${tilt}`}>
-//       <Pin colorClass={pin} />
-//       <div className="polaroid-card">
-//         <div className="polaroid-img-wrap">
-//           <img
-//             loading="lazy"
-//             decoding="async"
-//             src={
-//               new URL(`./assets/images/${pattern.image_path}`, import.meta.url)
-//                 .href
-//             }
-//             alt={pattern.title}
-//             className="polaroid-card-img"
-//           />
-//         </div>
-//         <div className="polaroid-card-body">
-//           <h3 className="polaroid-card-title">{pattern.title}</h3>
-//           <div className="polaroid-card-meta">
-//             <SkillBadge level={pattern.skill_level} />
-//             {pattern.score > 0 && pattern.score <= 1 && (
-//               <span className="match-score">
-//                 {Math.round(pattern.score * 100)}% Match
-//               </span>
-//             )}
-//           </div>
-//           <p className="polaroid-card-desc">{pattern.description}</p>
-//         </div>
-//         {onVote && pattern.id && (
-//           <div className="vote-row">
-//             <button
-//               className="vote-btn vote-up"
-//               onClick={(e) => {
-//                 e.preventDefault();
-//                 onVote(pattern.id!, "up");
-//               }}
-//               aria-label="Upvote"
-//             >
-//               <svg
-//                 width="11"
-//                 height="11"
-//                 viewBox="0 0 24 24"
-//                 fill="currentColor"
-//               >
-//                 <path d="M12 4l8 14H4z" />
-//               </svg>
-//               <span>{pattern.upvotes ?? 0}</span>
-//             </button>
-//             <button
-//               className="vote-btn vote-down"
-//               onClick={(e) => {
-//                 e.preventDefault();
-//                 onVote(pattern.id!, "down");
-//               }}
-//               aria-label="Downvote"
-//             >
-//               <svg
-//                 width="11"
-//                 height="11"
-//                 viewBox="0 0 24 24"
-//                 fill="currentColor"
-//               >
-//                 <path d="M12 20l-8-14h16z" />
-//               </svg>
-//               <span>{pattern.downvotes ?? 0}</span>
-//             </button>
-//           </div>
-//         )}
-//         <a
-//           className="polaroid-card-link"
-//           href={pattern.pattern_link}
-//           target="_blank"
-//           rel="noopener noreferrer"
-//         >
-//           View Pattern
-//         </a>
-//       </div>
-//     </div>
-//   );
-// }
-
+import DimensionsPanel from "./components/DimensionsPanel";
 
 
 /* app */
@@ -311,6 +28,20 @@ function App(): JSX.Element {
   const searchSectionRef = useRef<HTMLElement>(null);
   const [numCols, setNumCols] = useState(4);
   const [isFadingOut, setIsFadingOut] = useState(false);
+
+  // add dimensions
+  const [showDimensions, setShowDimensions] = useState(false);
+  const [dimensions, setDimensions] = useState<any[]>([]); 
+  
+  const fetchDimensions = useCallback(async () => {
+    try {
+      const res = await fetch("/api/dimensions");
+      const data = await res.json();
+      setDimensions(data);
+    } catch (err) {
+      console.error("Failed to fetch dimensions", err);
+    }
+  }, []);
 
   useEffect(() => {
     const board = boardRef.current;
@@ -743,6 +474,23 @@ function App(): JSX.Element {
         {hasSearch && (
           <div className="topk-container">
             <TopKSelector value={topK} onChange={handleTopKChange} />
+
+            <button className="dimension-toggle-btn" onClick={() => {
+                const next = !showDimensions;
+                setShowDimensions(next);
+              
+                if (next && dimensions.length === 0) {
+                  fetchDimensions();
+                }
+              }}
+            >
+              {showDimensions ? "Hide Insights" : "Show Insights"}
+            </button>
+
+            {showDimensions && (
+              <DimensionsPanel data={dimensions} />
+            )}
+
           </div>
         )}
 

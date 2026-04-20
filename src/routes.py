@@ -16,6 +16,8 @@ from tfidf_search import build_index, search
 # Ying changes
 from svd import build_svd_matrix, svd_search
 
+from svd import get_top_dimensions
+
 # ── AI toggle ────────────────────────────────────────────────────────────────
 USE_LLM = False
 # USE_LLM = True
@@ -149,6 +151,10 @@ def register_routes(app):
             "downvotes": pattern.downvotes,
             "vote_score": pattern.vote_score,
         })
+    
+    @app.route("/api/dimensions")
+    def get_dimensions():
+        return jsonify(get_top_dimensions())
 
 
     @app.route('/images/<path:filename>')
