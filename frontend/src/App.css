@@ -436,6 +436,47 @@
   border-bottom: 2px solid #3a5a10;
 }
 
+
+/* dimensions panel */
+
+.dimension-toggle-btn {
+  margin-left: 12px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: #f3e8ec;
+  border: none;
+  cursor: pointer;
+}
+
+.dimensions-panel {
+  margin: 16px 0;
+  padding: 16px;
+  background: #fff7fa;
+  border-radius: 12px;
+}
+
+.dimension-block {
+  margin-bottom: 12px;
+}
+
+.dimension-header {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.dimension-words {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dimension-word {
+  background: #f0dbe4;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
 /* scattered polaroid layout */
 
 .patterns-board {
