@@ -1,5 +1,3 @@
-import React from "react";
-
 const TOPK_OPTIONS = [
   { label: "All", value: 100 },
   { label: "10", value: 10 },
