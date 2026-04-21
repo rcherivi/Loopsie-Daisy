@@ -31,16 +31,8 @@ function App(): JSX.Element {
   // add dimensions
   const [showDimensions, setShowDimensions] = useState(false);
   const [dimensions, setDimensions] = useState<any[]>([]); 
-  
-  const fetchDimensions = useCallback(async () => {
-    try {
-      const res = await fetch("/api/dimensions");
-      const data = await res.json();
-      setDimensions(data);
-    } catch (err) {
-      console.error("Failed to fetch dimensions", err);
-    }
-  }, []);
+  const [topDimensions, setTopDimensions] = useState<any[]>([]);
+
 
   useEffect(() => {
     const board = boardRef.current;
@@ -164,6 +156,21 @@ function App(): JSX.Element {
     [],
   );
 
+  // fetch top latent dimensions - Fiona
+  const fetchDimensions = useCallback(async (query: string) => {
+    if (!query.trim()) return;
+
+    try {
+      const res = await fetch(
+        `/api/query-dimensions?title=${encodeURIComponent(query)}`
+      );
+      const data = await res.json();
+      setTopDimensions(data || []);
+    } catch (err) {
+      setTopDimensions([]);
+    }
+  }, []);
+
   // const handleLoadingDone = useCallback(() => {
   //   loadingDoneRef.current = true;
   //   if (fetchedDataRef.current !== null) {
@@ -195,6 +202,8 @@ function App(): JSX.Element {
       setShowLoading(true);
 
       runFetch(text, skill, k);
+      // add fetch dimensions - Fiona
+      fetchDimensions(text); 
     },
     [runFetch, topK],
   );
@@ -460,34 +469,18 @@ function App(): JSX.Element {
           )}
         </section>
         
+        {/* Top K Selector */}
         {hasSearch && (
           <div className="topk-container">
             <TopKSelector value={topK} onChange={handleTopKChange} />
-
-            <button className="dimension-toggle-btn" onClick={() => {
-                const next = !showDimensions;
-                setShowDimensions(next);
-              
-                if (next && dimensions.length === 0) {
-                  fetchDimensions();
-                }
-              }}
-            >
-              {showDimensions ? "Hide Insights" : "Show Insights"}
-            </button>
-
-            {showDimensions && (
-              <DimensionsPanel data={dimensions} />
-            )}
-
           </div>
         )}
 
-
         {/* SVD latent dimensions */}
         {hasSearch && (
-          <div className="dimensions-container">
-            <button className="dimension-toggle-btn" onClick={() => {
+          <div className="dimension-container">
+            <DimensionsPanel data={topDimensions} />
+            {/* <button className="dimension-toggle-btn" onClick={() => {
                 const next = !showDimensions;
                 setShowDimensions(next);
               
@@ -501,7 +494,7 @@ function App(): JSX.Element {
 
             {showDimensions && (
               <DimensionsPanel data={dimensions} />
-            )}
+            )} */}
           </div>
         )}
 

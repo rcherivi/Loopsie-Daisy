@@ -441,42 +441,65 @@
 
 /* dimensions panel */
 
-.dimension-toggle-btn {
-  margin-left: 12px;
-  padding: 6px 12px;
-  border-radius: 16px;
-  background: #f3e8ec;
-  border: none;
-  cursor: pointer;
+.dimension-container {
+
 }
 
 .dimensions-panel {
   margin: 16px 0;
   padding: 16px;
   background: #fff7fa;
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
-.dimension-block {
-  margin-bottom: 12px;
-}
-
-.dimension-header {
+.dimensions-title {
+  font-size: 14px;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
+  color: #7a4050;
+}
+
+.dimension-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.dimension-rank {
+  font-weight: 600;
+  color: #a0606e;
+  width: 24px;
+}
+
+.dimension-content {
+  flex: 1;
 }
 
 .dimension-words {
   display: flex;
-  gap: 6px;
   flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
 }
 
 .dimension-word {
   background: #f0dbe4;
-  padding: 4px 8px;
+  padding: 3px 7px;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 11px;
+}
+
+.dimension-bar {
+  height: 4px;
+  background: #f3e5ea;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.dimension-bar-fill {
+  height: 100%;
+  background: #e39ab0;
+  border-radius: 4px;
 }
 
 /* scattered polaroid layout */

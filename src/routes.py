@@ -16,7 +16,8 @@ from tfidf_search import build_index, search
 # Ying changes
 from svd import build_svd_matrix, svd_search
 
-from svd import get_top_dimensions
+# Fiona
+from svd import transform_query, get_top_dimensions
 
 # ── AI toggle ────────────────────────────────────────────────────────────────
 USE_LLM = False
@@ -151,11 +152,6 @@ def register_routes(app):
             "downvotes": pattern.downvotes,
             "vote_score": pattern.vote_score,
         })
-    
-    @app.route("/api/dimensions")
-    def get_dimensions():
-        return jsonify(get_top_dimensions())
-
 
     @app.route('/images/<path:filename>')
     def get_image(filename):
@@ -164,6 +160,20 @@ def register_routes(app):
     if USE_LLM:
         from llm_routes import register_chat_route
         register_chat_route(app, json_search)
+
+    # top dimensions of each search query
+    @app.route("/api/query-dimensions")
+    def query_dimensions():
+        query = request.args.get("title", "")
+
+        if not query.strip():
+            return jsonify([])
+
+        query_lsa = transform_query(query)  # or inline if you didn’t extract it
+        dims = get_top_dimensions(query_lsa)
+
+        return jsonify(dims)
+
 
 
 # def json_search(query):
