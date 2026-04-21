@@ -35,6 +35,10 @@ export default function DimensionsPanel({
                 className="dimension-bar-fill"
                 style={{ width: `${d.score * 100}%` }}
               />
+
+              <span className="dimension-score">
+                {d.score.toFixed(3)}
+              </span>
             </div>
           </div>
 

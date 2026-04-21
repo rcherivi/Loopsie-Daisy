@@ -490,16 +490,28 @@
 }
 
 .dimension-bar {
-  height: 4px;
+  height: 12px;
   background: #f3e5ea;
   border-radius: 4px;
   overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .dimension-bar-fill {
   height: 100%;
   background: #e39ab0;
   border-radius: 4px;
+}
+
+.dimension-score {
+  position: absolute;
+  right: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #7a4050;
+  mix-blend-mode: multiply;
 }
 
 /* scattered polaroid layout */
