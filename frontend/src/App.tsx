@@ -459,6 +459,7 @@ function App(): JSX.Element {
             </p>
           )}
         </section>
+        
         {hasSearch && (
           <div className="topk-container">
             <TopKSelector value={topK} onChange={handleTopKChange} />
@@ -479,6 +480,28 @@ function App(): JSX.Element {
               <DimensionsPanel data={dimensions} />
             )}
 
+          </div>
+        )}
+
+
+        {/* SVD latent dimensions */}
+        {hasSearch && (
+          <div className="dimensions-container">
+            <button className="dimension-toggle-btn" onClick={() => {
+                const next = !showDimensions;
+                setShowDimensions(next);
+              
+                if (next && dimensions.length === 0) {
+                  fetchDimensions();
+                }
+              }}
+            >
+              {showDimensions ? "Hide Insights" : "Show Insights"}
+            </button>
+
+            {showDimensions && (
+              <DimensionsPanel data={dimensions} />
+            )}
           </div>
         )}
 
