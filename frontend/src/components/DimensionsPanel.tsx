@@ -20,7 +20,7 @@ export default function DimensionsPanel({
       {data.slice(0, 3).map((d, i) => (
         <div key={d.dimension} className="dimension-row">
           <div className="dimension-rank">
-            #{i + 1}
+            {i + 1}
           </div>
 
           <div className="dimension-content">

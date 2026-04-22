@@ -30,7 +30,6 @@ function App(): JSX.Element {
 
   // add dimensions
   const [showDimensions, setShowDimensions] = useState(false);
-  const [dimensions, setDimensions] = useState<any[]>([]); 
   const [topDimensions, setTopDimensions] = useState<any[]>([]);
 
 
@@ -465,7 +464,16 @@ function App(): JSX.Element {
                 {patterns.length === 1 ? "pattern" : "patterns"}
               </strong>{" "}
               found
+
+              <button 
+                className={`dimensions-toggle-btn ${showDimensions ? "active" : ""}`}
+                onClick={() => setShowDimensions((prev) => !prev)}
+              >
+                {showDimensions ? "Hide Insights" : "Show Insights"}
+              </button>
             </p>
+            
+            
           )}
         </section>
         
@@ -479,22 +487,9 @@ function App(): JSX.Element {
         {/* SVD latent dimensions */}
         {hasSearch && (
           <div className="dimension-container">
-            <DimensionsPanel data={topDimensions} />
-            {/* <button className="dimension-toggle-btn" onClick={() => {
-                const next = !showDimensions;
-                setShowDimensions(next);
-              
-                if (next && dimensions.length === 0) {
-                  fetchDimensions();
-                }
-              }}
-            >
-              {showDimensions ? "Hide Insights" : "Show Insights"}
-            </button>
-
             {showDimensions && (
-              <DimensionsPanel data={dimensions} />
-            )} */}
+              <DimensionsPanel data={topDimensions} />
+            )}
           </div>
         )}
 
