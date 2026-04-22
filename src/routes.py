@@ -17,7 +17,7 @@ from tfidf_search import build_index, search
 from svd import build_svd_matrix, svd_search
 
 # Fiona
-from svd import transform_query, get_top_dimensions, get_pattern_top_words
+from svd import transform_query, get_top_dimensions
 
 # ── AI toggle ────────────────────────────────────────────────────────────────
 USE_LLM = False

@@ -564,6 +564,7 @@ function App(): JSX.Element {
                       pattern={pattern}
                       index={ci + row * numCols}
                       onVote={handleVote}
+                      dimensions={pattern.dimension_words}
                     />
                   ))}
                 </div>

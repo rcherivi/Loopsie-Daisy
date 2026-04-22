@@ -20,6 +20,8 @@ pattern_data = []
 # number of latent dimensions
 N_COMPONENTS = 600
 
+dimension_top_words = None
+
 
 import numpy as np
 #import matplotlib.pyplot as plt
@@ -98,13 +100,28 @@ def build_svd_matrix(patterns):
     # Normalizing the vectors for cosine similarity for pattern matching stage
     lsa_matrix = normalize(lsa_raw, norm="l2")
 
+    # find top words of each dimension
+    global dimension_top_words
+
+    feature_names = vectorizer.get_feature_names_out()
+
+    dimension_top_words = []
+
+    for dim in range(svd.components_.shape[0]):
+        component = svd.components_[dim]
+
+        # only compute once
+        top_idx = component.argsort()[::-1][:15]
+        words = [feature_names[i] for i in top_idx]
+
+        dimension_top_words.append(words)
+
     print(
         f"Index built: {len(docs)} docs | "
         f"vocab={tfidf_matrix.shape[1]} | "
         f"LSA dims={lsa_matrix.shape[1]} | "
         f"variance explained={svd.explained_variance_ratio_.sum():.1%}"
     )
-
 
 
 def svd_search(query, skill_filter="", top_k = 10):
@@ -143,18 +160,22 @@ def svd_search(query, skill_filter="", top_k = 10):
             results.append({
                 "pattern_obj": pattern,
                 "score": final_score,
+                "dimension_words": get_pattern_keywords(i, query_lsa),
                 "_debug": {
                     "lsa": round(float(lsa_score), 4),
                     "overlap": round(overlap_score, 4),
                     "ngram": round(ngram_score, 4),
                 },
-                # add top words for each pattern - Fiona
-                "dimension_words": get_pattern_top_words(i, query_lsa),
             })
 
     results.sort(key=lambda x: x["score"], reverse=True)
-    filtered = [x for x in results if x["score"] > 0.05]
-    return filtered[:top_k]
+    filtered = [x for x in results if x["score"] > 0.05][:top_k]
+
+    for item in filtered:
+        idx = pattern_data.index(item["pattern_obj"])
+        item["dimension_words"] = get_pattern_keywords(idx, query_lsa)
+
+    return filtered
 
 
 # Added function to get top dimensions - Fiona
@@ -193,61 +214,28 @@ def get_top_dimensions(query_lsa, top_n=3, top_words=5):
     return dimensions
 
 
-# def get_pattern_top_words(pattern_idx, top_n=5):
-#     global lsa_matrix, svd, vectorizer
-
-#     vec = lsa_matrix[pattern_idx]  # pattern vector
-
-#     # top dimensions for this pattern
-#     top_dims = vec.argsort()[::-1][:3]
-
-#     feature_names = vectorizer.get_feature_names_out()
-
-#     words = []
-
-#     for dim in top_dims:
-#         component = svd.components_[dim]
-#         top_word_idx = component.argsort()[::-1][:top_n]
-
-#         for i in top_word_idx:
-#             w = feature_names[i]
-#             if w not in words:
-#                 words.append(w)
-
-#     return words[:top_n]
-
-
-def get_pattern_top_words(pattern_idx, query_lsa, top_dims=3, top_words=5):
-    global lsa_matrix, svd, vectorizer
+def get_pattern_keywords(pattern_idx, query_lsa, top_k_words=5):
+    global lsa_matrix, dimension_top_words
 
     pattern_vec = lsa_matrix[pattern_idx]
     query_vec = query_lsa.flatten()
 
+    # contribution = how much each dimension explains the match
     contribution = pattern_vec * query_vec
 
-    # pick most important dimensions for THIS match
-    dim_indices = contribution.argsort()[::-1][:top_dims]
-
-    feature_names = vectorizer.get_feature_names_out()
+    # top contributing dimensions
+    top_dims = contribution.argsort()[::-1][:2]
 
     words = []
 
-    for dim in dim_indices:
-        component = svd.components_[dim]
-
-        word_indices = component.argsort()[::-1]
-
-        for idx in word_indices:
-            w = feature_names[idx]
-
+    for dim in top_dims:
+        for w in dimension_top_words[dim]:
             if len(w) < 3:
                 continue
-            if w in words:
-                continue
+            if w not in words:
+                words.append(w)
 
-            words.append(w)
-
-            if len(words) >= top_words:
-                break
+            if len(words) >= top_k_words:
+                return words
 
     return words

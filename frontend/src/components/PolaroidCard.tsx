@@ -166,6 +166,8 @@ export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
         {/* Backside of polaroid card */}
         <div className="polaroid-card back">
           <div className="polaroid-card-body">
+            <h3 className="polaroid-card-title">Top Key Words:</h3>
+            
             <div className="polaroid-dimension-back">
               {dimensions && dimensions.length > 0 ? (
                 <div className="polaroid-dimension-words-container">
