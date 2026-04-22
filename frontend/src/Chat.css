@@ -27,8 +27,8 @@
   gap: 10px;
   padding: 13px 20px 13px 16px;
   border-radius: 50px;
-  border: none;
-  background: #d4607a;
+  border: 1.5px solid #fff5c0;
+  background: linear-gradient(135deg, #748d3e 0%, #d4607a 100%);
   color: #fff;
   font-family: "Nunito", sans-serif;
   font-size: 16px;
@@ -43,8 +43,9 @@
 }
 
 .chat-fab:hover {
-  background: #b84060;
-  box-shadow: 0 6px 22px rgba(212, 96, 122, 0.45), 0 2px 6px rgba(0, 0, 0, 0.1);
+  color: #fff;
+  background: linear-gradient(135deg, #5c781f 0%, #9f354c 100%);;
+  box-shadow: 0 6px 22px rgba(212, 96, 122, 0.45), 0 10px 6px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
@@ -82,7 +83,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 14px 13px 18px;
-  background: linear-gradient(135deg, #d4607a 0%, #c04468 100%);
+  background: linear-gradient(135deg, #a0c360 0%, #d4607a 100%);
   flex-shrink: 0;
 }
 
@@ -180,9 +181,9 @@
 }
 
 .message.assistant p {
-  background: #fff1f4;
+  background: #f1f9e2;
   color: #5a2a36;
-  border: 1px solid #f0d8df;
+  border: 1px solid #e0eea3;
   border-bottom-left-radius: 4px;
   font-weight: 500;
 }
@@ -228,8 +229,6 @@
 .chat-bar {
   flex-shrink: 0;
   padding: 10px 12px 14px;
-  border-top: 1px solid #f0d0d8;
-  background: #fff1f4;
   /* remove old width/max-width centering */
   width: 100%;
 }
@@ -241,16 +240,17 @@
   max-width: 100%;
   margin: 0;
   border-radius: 50px;
-  border: 1.5px solid #f0b8c8;
+  border: 2px solid #f0b8c8;
   padding: 8px 8px 8px 14px;
   gap: 8px;
   background: #fff;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.chat-bar .input-row:focus-within {
+.chat-bar .input-row:hover,
+.chat-bar .input-row:focus-within{
+  box-shadow: 0 2px 14px rgba(212, 96, 122, 0.18);
   border-color: #d4607a;
-  box-shadow: 0 2px 10px rgba(212, 96, 122, 0.14);
 }
 
 .chat-bar .input-row input {

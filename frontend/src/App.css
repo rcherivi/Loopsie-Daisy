@@ -53,7 +53,7 @@
   width: calc(100% - 48px);
   max-width: 700px;
   border-radius: 50px;
-  background: rgba(255, 241, 244, 0.82);
+  background: fff;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(240, 184, 200, 0.6);
@@ -242,7 +242,7 @@
 
 .search-box {
   border-radius: 50px;
-  border: 1.5px solid #f0b8c8;
+  border: 2px solid #f0b8c8;
   background: #fff;
   display: flex;
   align-items: center;
@@ -451,7 +451,7 @@
   margin: 16px 0;
   padding: 16px;
   border-radius: 14px;
-  background: #fff9f0;
+  background: #fff;
   border: 1.5px solid #f7c9d4;
 }
 
@@ -489,7 +489,7 @@
 }
 
 .dimension-word {
-  background: #f0dbe4;
+  background: #e0eea3;
   padding: 3px 7px;
   border-radius: 8px;
   font-size: 12px;
@@ -860,7 +860,7 @@
 .summary-banner {
   max-width: 720px;
   margin: 0 auto 1.5rem;
-  background: #fff9f0;
+  background: #fff;
   border: 1.5px solid #f7c9d4;
   border-radius: 14px;
   padding: 1rem 1.4rem;
@@ -890,7 +890,9 @@
 }
 
 .best-match-link:hover {
-  background: #f7c9d4;
+  background: #e8f5d8;
+  border-color: #8ab848;
+  color: #3a5a10;
 }
 
 .summary-toggle-btn {
@@ -975,8 +977,8 @@
   display: block;
   margin-top: 10px;
   padding: 10px 0;
-  background: #f7c9d4;
-  color: #5a2a36;
+  background: #d66a83;
+  color: #fff;
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
@@ -991,7 +993,7 @@
 }
 
 .polaroid-card-link:hover {
-  background: #d4607a;
+  background: #b84060;
   color: #fff;
   border-top-color: #d4607a;
 }
