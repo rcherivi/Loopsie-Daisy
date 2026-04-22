@@ -510,6 +510,7 @@ function App(): JSX.Element {
                       pattern={pattern}
                       index={i}
                       onVote={handleVote}
+                      dimensions={pattern.dimension_words}
                     />
                   </div>
                 ))}

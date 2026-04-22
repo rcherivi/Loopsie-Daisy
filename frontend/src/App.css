@@ -497,7 +497,7 @@
 }
 
 .dimensions-toggle-btn {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: #5a2a36;
   background: none;
@@ -594,7 +594,12 @@
 
 /* card */
 
-.polaroid-card {
+.polaroid-card.front,
+.polaroid-card.back {
+  position: absolute;
+  top: 0;
+  left: 0;
+
   background: #fffcf8;
   border: 1px solid #e8d8cc;
   box-shadow:
@@ -604,7 +609,53 @@
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  backface-visibility: hidden;
+
+  height: 100%;
+  width: 100%;
 }
+
+.polaroid-card.back {
+  position: absolute;
+  transform: rotateY(180deg);
+}
+
+.polaroid-flip {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+  height: 100%;
+  width: 100%;
+}
+
+.polaroid-flip.flipped {
+  transform: rotateY(180deg);
+}
+
+/* front side of polaroid */
+
+/* flip button */
+
+.flip-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+
+  border: none;
+  background: #fff;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.flip-btn:hover {
+  background: #fff3f7;
+}
+
 
 /* push pins */
 
@@ -869,6 +920,40 @@
 .patterns-board-hidden {
   display: none;
 }
+
+/* back side of polaroid card */
+
+/* latent dimensions */
+
+.polaroid-dimension-back {
+  padding: 12px;
+  text-align: center;
+}
+
+.polaroid-dimension-words-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.polaroid-dimension-word {
+  background: #f0dbe4;
+  padding: 4px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.flip-back-btn {
+  margin-top: 10px;
+  font-size: 11px;
+  background: none;
+  border: none;
+  color: #a0606e;
+  cursor: pointer;
+}
+
 
 .featured-section {
   width: 100%;

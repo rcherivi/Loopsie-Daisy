@@ -17,7 +17,7 @@ from tfidf_search import build_index, search
 from svd import build_svd_matrix, svd_search
 
 # Fiona
-from svd import transform_query, get_top_dimensions
+from svd import transform_query, get_top_dimensions, get_pattern_top_words
 
 # ── AI toggle ────────────────────────────────────────────────────────────────
 USE_LLM = False
@@ -98,7 +98,10 @@ def json_search():
     formatted_results = []
     for item in raw_results:
         p = item["pattern_obj"]
-        formatted_results.append(p.to_dict(score=float(item["score"])))
+        # formatted_results.append(p.to_dict(score=float(item["score"])))
+        formatted = p.to_dict(score=float(item["score"]))
+        formatted["dimension_words"] = item.get("dimension_words", [])
+        formatted_results.append(formatted)
 
     return formatted_results
 

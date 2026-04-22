@@ -9,4 +9,5 @@ export interface Pattern {
   score: number;
   upvotes?: number;
   downvotes?: number;
+  dimension_words?: string[];
 }
