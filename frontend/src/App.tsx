@@ -4,7 +4,8 @@ import "./App.css";
 import { Pattern } from "./types";
 import LoadingScreen from "./LoadingScreen";
 
-import Chat from "./components/Chat";
+import Chat from "./Chat";
+import "./Chat.css"
 import BgDaisies from "./components/BgDaisies";
 import TopKSelector from "./components/TopKSelector";
 import PolaroidCard from "./components/PolaroidCard";
@@ -394,10 +395,13 @@ function App(): JSX.Element {
 
       <div className={`full-body-container ${useLlm ? "llm-mode" : ""}`}>
         <BgDaisies />
+
         {/* hero landing section */}
         <section className="hero-section">
+
           {/* watercolor daisies background */}
           <div className="hero-content">
+
             {/* stems */}
             <path
               d="M90 480 C88 420 78 360 72 290"
@@ -433,6 +437,7 @@ function App(): JSX.Element {
               opacity="0.55"
             />
           </div>
+
           <div className="hero-content">
             <h1 className="hero-title">Loopsie Daisy</h1>
             <p className="hero-subtitle">Find your perfect crochet pattern</p>
@@ -702,8 +707,17 @@ function App(): JSX.Element {
               ));
             })()}
         </div>
-        
-        {/* LLM Search  */}
+
+        <footer className="app-footer">
+          <span className="app-footer-logo">Loopsie Daisy</span>
+          <span className="app-footer-copy">
+            © 2026 Loopsie Daisy. Stitched with love.
+          </span>
+        </footer>
+
+      </div>
+
+      {/* LLM Search  */}
         {useLlm && (
           <Chat
             onSearchTerm={handleChatSearch}
@@ -715,15 +729,6 @@ function App(): JSX.Element {
             }))}
           />
         )}
-
-        <footer className="app-footer">
-          <span className="app-footer-logo">Loopsie Daisy</span>
-          <span className="app-footer-copy">
-            © 2026 Loopsie Daisy. Stitched with love.
-          </span>
-        </footer>
-
-      </div>
     </>
   );
 }

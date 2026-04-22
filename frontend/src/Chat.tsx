@@ -29,6 +29,7 @@ function Chat({ onSearchTerm, summaryData, patterns }: ChatProps): JSX.Element {
   const [input, setInput] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -47,11 +48,11 @@ function Chat({ onSearchTerm, summaryData, patterns }: ChatProps): JSX.Element {
     const patternContext =
       patterns && patterns.length > 0
         ? `Current search results:\n${patterns
-            .map(
-              (p, i) =>
-                `${i + 1}. ${p.title} (${p.skill_level}) — ${p.description?.slice(0, 120)}...`,
-            )
-            .join("\n")}`
+          .map(
+            (p, i) =>
+              `${i + 1}. ${p.title} (${p.skill_level}) — ${p.description?.slice(0, 120)}...`,
+          )
+          .join("\n")}`
         : "";
 
     const summaryContext = summaryData
@@ -154,69 +155,90 @@ function Chat({ onSearchTerm, summaryData, patterns }: ChatProps): JSX.Element {
   };
 
   return (
-    <>
-      <div id="messages">
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`message ${msg.isUser ? "user" : "assistant"}`}
-          >
-            {/* thinking block */}
-            {!msg.isUser && msg.thinking && (
-              <div className="thinking-block">
-                <button
-                  className="thinking-toggle"
-                  onClick={() =>
-                    setMessages((prev) =>
-                      prev.map((m, j) =>
-                        j === i ? { ...m, showThinking: !m.showThinking } : m,
-                      ),
-                    )
-                  }
-                >
-                  {msg.showThinking ? "▲ Hide thinking" : "▼ Show thinking"}
-                </button>
-                {msg.showThinking && (
-                  <p className="thinking-text">{msg.thinking}</p>
+    <div id="chat-root">
+      {/* FAB — hidden when open */}
+      {!open && (
+        <button className="chat-fab" onClick={() => setOpen(true)}>
+          💬 Ask about patterns …
+        </button>
+      )}
+
+      {/* Modal panel */}
+      {open && (
+        <div className="chat-panel">
+          <div className="chat-header">
+            <div className="chat-header-info">
+              <span className="chat-header-title">Pattern Assistant</span>
+              <span className="chat-header-sub">Ask me anything about patterns</span>
+            </div>
+            <button className="chat-close" onClick={() => setOpen(false)}>✕</button>
+          </div>
+
+          <div id="messages">
+            {messages.map((msg, i) => (
+              <div
+                key={i}
+                className={`message ${msg.isUser ? "user" : "assistant"}`}
+              >
+                {/* thinking block */}
+                {!msg.isUser && msg.thinking && (
+                  <div className="thinking-block">
+                    <button
+                      className="thinking-toggle"
+                      onClick={() =>
+                        setMessages((prev) =>
+                          prev.map((m, j) =>
+                            j === i ? { ...m, showThinking: !m.showThinking } : m,
+                          ),
+                        )
+                      }
+                    >
+                      {msg.showThinking ? "▲ Hide thinking" : "▼ Show thinking"}
+                    </button>
+                    {msg.showThinking && (
+                      <p className="thinking-text">{msg.thinking}</p>
+                    )}
+                  </div>
                 )}
+                <p>{msg.text}</p>
+              </div>
+            ))}
+            {loading && (
+              <div className="loading-indicator visible">
+                <span className="loading-dot" />
+                <span className="loading-dot" />
+                <span className="loading-dot" />
               </div>
             )}
-            <p>{msg.text}</p>
+            <div ref={bottomRef} />
           </div>
-        ))}
-        {loading && (
-          <div className="loading-indicator visible">
-            <span className="loading-dot" />
-            <span className="loading-dot" />
-            <span className="loading-dot" />
-          </div>
-        )}
-        <div ref={bottomRef} />
-      </div>
 
-      <div className="chat-bar">
-        <form className="input-row" onSubmit={sendMessage}>
-          <img
-            src={SearchIcon}
-            alt=""
-            width={20}
-            height={20}
-            style={{ flexShrink: 0 }}
-          />
-          <input
-            type="text"
-            placeholder="Ask about these patterns..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={loading}
-            autoComplete="off"
-          />
-          <button type="submit" disabled={loading}>
-            Send
-          </button>
-        </form>
-      </div>
-    </>
+          <div className="chat-bar">
+            <form className="input-row" onSubmit={sendMessage}>
+              <img
+                src={SearchIcon}
+                alt=""
+                width={20}
+                height={20}
+                style={{ flexShrink: 0 }}
+              />
+              <input
+                type="text"
+                placeholder="Ask about these patterns..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={loading}
+                autoComplete="off"
+              />
+              <button type="submit" disabled={loading}>
+                ➤
+              </button>
+            </form>
+          </div>
+
+        </div>
+      )}
+    </div>
   );
 }
 
