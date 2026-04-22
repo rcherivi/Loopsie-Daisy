@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import "./App.css";
 import { Pattern } from "./types";
-import Chat from "./Chat";
 import LoadingScreen from "./LoadingScreen";
 
+import Chat from "./components/Chat";
 import BgDaisies from "./components/BgDaisies";
 import TopKSelector from "./components/TopKSelector";
 import PolaroidCard from "./components/PolaroidCard";
@@ -476,7 +476,7 @@ function App(): JSX.Element {
           <div className="header-flowers" />
           <div className="app-header-icons" />
         </header>
-        
+
         {/* search */}
         <section className="search-section" ref={searchSectionRef}>
           <div className="search-row">
@@ -702,6 +702,8 @@ function App(): JSX.Element {
               ));
             })()}
         </div>
+        
+        {/* LLM Search  */}
         {useLlm && (
           <Chat
             onSearchTerm={handleChatSearch}
@@ -713,12 +715,14 @@ function App(): JSX.Element {
             }))}
           />
         )}
+
         <footer className="app-footer">
           <span className="app-footer-logo">Loopsie Daisy</span>
           <span className="app-footer-copy">
             © 2026 Loopsie Daisy. Stitched with love.
           </span>
         </footer>
+
       </div>
     </>
   );
