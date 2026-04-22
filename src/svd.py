@@ -183,18 +183,16 @@ def svd_search(query, skill_filter="", top_k=10):
 
     if vectorizer is None or not query.strip():
         return []
-    
-
 
     corrected_query, stemmed_query = normalize_query(query)
     effective_query = corrected_query if corrected_query.strip() else query
     query_tokens = _tokenize(effective_query)
-    query_weights = query_lsa[0]
-
     query_tfidf = vectorizer.transform([effective_query])
     query_lsa   = normalize(svd.transform(query_tfidf), norm="l2")
+    query_weights = query_lsa[0]
+
     lsa_scores = (lsa_matrix @ query_lsa.T).flatten()
-    
+
     indices = np.arange(len(pattern_data))
     if skill_filter:
         skill_filter_lower = skill_filter.lower()
@@ -202,80 +200,82 @@ def svd_search(query, skill_filter="", top_k=10):
             i for i in indices
             if skill_filter_lower in (pattern_data[i].skill_level or "").lower()
         ])
-    # Only want positive scores
+
+    # Only keep patterns with positive LSA scores
     positive_mask = lsa_scores[indices] > 0
     indices = indices[positive_mask]
-
 
     if len(indices) == 0:
         return []
 
-    # Vectorized text scoring (to uplift similar categories (hats, bags, etc.) and avoid matching based on adjectives only)
+    # Slice lsa_scores down to the filtered index set so all arrays share the same shape
+    lsa_scores_filtered = lsa_scores[indices]
+
     titles = [pattern_data[i].title for i in indices]
-    # title_overlap_scores = np.array([word_overlap(query, t) for t in titles])
-    ngram_score   = np.array([ngram_sim(stemmed_query, combined_text) for combined_text in [f"{pattern_data[i].title} {pattern_data[i].description}" for i in indices]])
-    fuzzy_score   = np.array([fuzzy_title_score(query_tokens, title) for title in titles])
-    title_any = np.array([_title_any_term_score(query_tokens, title) for title in titles])
-    title_all = np.array([_title_all_term_score(query_tokens, title) for title in titles])
+    ngram_score    = np.array([ngram_sim(stemmed_query, f"{pattern_data[i].title} {pattern_data[i].description}") for i in indices])
+    fuzzy_score    = np.array([fuzzy_title_score(query_tokens, title) for title in titles])
+    title_any      = np.array([_title_any_term_score(query_tokens, title) for title in titles])
+    title_all      = np.array([_title_all_term_score(query_tokens, title) for title in titles])
     rocchio_deltas = np.array([_rocchio_deltas.get(i, 0.0) for i in indices])
 
-    #per_term    = _per_term_lsa_scores(query_tokens)
-    #n_terms = max(len(query_tokens), 1)
-    #pt_w = min(0.3 + 0.1 * (n_terms - 1), 0.6)
-    #wh_w = 1.0 - pt_w
+    final_scores = (
+        0.55 * lsa_scores_filtered
+        + 0.10 * ngram_score
+        + 0.15 * title_any
+        + 0.10 * title_all
+        + 0.10 * fuzzy_score
+        + rocchio_deltas
+    )
 
-    final_scores = (0.55 * lsa_scores
-            + 0.10 * ngram_score
-            + 0.15 * title_any
-            + 0.10 * title_all
-            + 0.10 * fuzzy_score
-            + rocchio_deltas          
-        )
-    
-        # Filter to top 80th percentile and if the scores are generally bad, then have a minimum threshold to prevent returning irrelevant results
+    # Filter to top 80th percentile; also enforce a minimum threshold
+    # to prevent returning irrelevant results when scores are generally low
     threshold = np.percentile(final_scores, 80)
-    keep_mask = (final_scores > threshold) & (final_scores > 0.05)
+    keep_mask     = (final_scores > threshold) & (final_scores > 0.05)
     kept_indices  = indices[keep_mask]
     kept_scores   = final_scores[keep_mask]
-    kept_lsa      = lsa_scores[kept_indices]
+    kept_lsa      = lsa_scores_filtered[keep_mask]
+    kept_fuzzy    = fuzzy_score[keep_mask]
 
-    sort_order   = np.argsort(kept_scores)[::-1][:top_k]
-    final_indices = kept_indices[sort_order]
+    if len(kept_indices) == 0:
+        return []
+
+    sort_order          = np.argsort(kept_scores)[::-1][:top_k]
+    final_indices       = kept_indices[sort_order]
     final_scores_sorted = kept_scores[sort_order]
 
-    # Per-pattern: find top 3 contributing latent dimensions and then summarizing each
-    pattern_lsa_matrix = lsa_matrix[final_indices]
-    dim_contributions  = pattern_lsa_matrix * query_weights  # shape (k, n_components)
+    # Per-pattern: find top 3 contributing latent dimensions and summarize each
+    pattern_lsa_matrix     = lsa_matrix[final_indices]
+    dim_contributions      = pattern_lsa_matrix * query_weights  # shape (k, n_components)
     top_3_dims_per_pattern = np.argsort(dim_contributions, axis=1)[:, ::-1][:, :3]
-    dim_words_per_pattern = [
+    dim_words_per_pattern  = [
         [get_top_words_for_dim(dim_idx, top_n=10) for dim_idx in top_3_dims]
         for top_3_dims in top_3_dims_per_pattern
     ]
 
     results = []
     for rank, (pat_idx, score) in enumerate(zip(final_indices, final_scores_sorted)):
-        i_in_kept = sort_order[rank]
-        if fuzzy_score[i_in_kept] > 0.7:
-            results.append({"pattern_obj": pattern_data[pat_idx], "score": max(score, fuzzy_score[i_in_kept] * 0.3), 
-                            "dim_summaries": dim_words_per_pattern[rank], 
-                            "_debug": {
-                                "lsa":      round(float(kept_lsa[i_in_kept]), 4),
-                                "top_dims": top_3_dims_per_pattern[rank].tolist(),
+        i_in_sort = sort_order[rank]
+        fuzz = kept_fuzzy[i_in_sort]
+        results.append({
+            "pattern_obj":   pattern_data[pat_idx],
+            "score":         max(score, fuzz * 0.3) if fuzz > 0.7 else score,
+            "dim_summaries": dim_words_per_pattern[rank],
+            "_debug": {
+                "lsa":      round(float(kept_lsa[i_in_sort]), 4),
+                "top_dims": top_3_dims_per_pattern[rank].tolist(),
             },
         })
 
-    return results
-
     results.sort(key=lambda x: x["score"], reverse=True)
-    filtered = [x for x in results if x["score"] > 0.05]
-    return filtered[:top_k]
+    return [x for x in results if x["score"] > 0.05][:top_k]
+
 
 def get_top_words_for_dim(dim_idx, top_n=10):
     """Returns the top words associated with a specific latent dimension."""
     global vectorizer, svd
     if not vectorizer or not svd:
         return []
-    
+
     feature_names = vectorizer.get_feature_names_out()
     top_word_indices = svd.components_[dim_idx].argsort()[::-1][:top_n]
     return [feature_names[i] for i in top_word_indices]
