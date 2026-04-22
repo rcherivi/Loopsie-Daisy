@@ -940,20 +940,6 @@
   text-align: center;
 }
 
-.polaroid-dimension-words-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-  margin: 10px 0;
-}
-
-.polaroid-dimension-word {
-  background: #f0dbe4;
-  padding: 4px 8px;
-  border-radius: 10px;
-  font-size: 11px;
-}
 
 .flip-back-btn {
   margin-top: 10px;
