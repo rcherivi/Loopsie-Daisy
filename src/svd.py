@@ -22,8 +22,9 @@ N_COMPONENTS = 600
 
 dimension_top_words = None
 
-
+import re
 import numpy as np
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 #import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
@@ -243,12 +244,16 @@ def get_shared_dimensions(pattern_idx, query_lsa, top_n=2, top_k_words=5):
 
     return results
 
+def tokenize(text):
+    # remove punctuation + lowercase
+    words = re.findall(r"\b[a-zA-Z]{2,}\b", text.lower())
+    return [w for w in words if w not in ENGLISH_STOP_WORDS]
 
 def get_keyword_matches(query, pattern):
-    q_tokens = set(query.lower().split())
+    q_tokens = set(tokenize(query))
 
     text = f"{pattern.title} {pattern.description}".lower()
-    p_tokens = set(text.split())
+    p_tokens = set(tokenize(text))
 
     return list(q_tokens & p_tokens)
 
