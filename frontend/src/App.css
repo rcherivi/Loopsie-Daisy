@@ -478,7 +478,7 @@
   flex: 1;
 }
 
-.dimension-words {
+.dimension-words-container {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -497,7 +497,7 @@
 }
 
 .dimensions-toggle-btn {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #5a2a36;
   background: none;
@@ -516,6 +516,23 @@
   color: #5a2a36;
   border-bottom: 2px solid #5a2a36;
 }
+
+.dimensions-triangle {
+  display: inline-block;
+  margin-right: 3px;
+  transition: transform 0.2s ease;
+}
+
+.dimensions-triangle.open {
+  transform: rotate(90deg);
+}
+
+.dimensions-empty {
+  font-size: 15px;
+  margin: 0;
+  color: #a0606e;
+}
+
 
 
 /* scattered polaroid layout */

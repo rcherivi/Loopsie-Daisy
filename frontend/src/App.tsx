@@ -466,9 +466,12 @@ function App(): JSX.Element {
               found
 
               <button 
-                className={`dimensions-toggle-btn ${showDimensions ? "active" : ""}`}
+                className="dimensions-toggle-btn"
                 onClick={() => setShowDimensions((prev) => !prev)}
               >
+                <span className={`dimensions-triangle ${showDimensions ? "open" : ""}`}>
+                  ▶
+                </span>
                 {showDimensions ? "Hide Insights" : "Show Insights"}
               </button>
             </p>
