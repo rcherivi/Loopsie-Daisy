@@ -25,6 +25,38 @@ N_COMPONENTS = 600
 
 _CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".svd_cache")
 
+_rocchio_deltas: dict[int, float] = {}
+
+
+ROCCHIO_ALPHA = 0.02
+
+
+ROCCHIO_CAP = 0.30
+
+
+def apply_rocchio_vote(pattern_index: int, vote_type: str) -> None:
+
+    delta = ROCCHIO_ALPHA if vote_type == "up" else -ROCCHIO_ALPHA
+    current = _rocchio_deltas.get(pattern_index, 0.0)
+    updated = current + delta
+    _rocchio_deltas[pattern_index] = max(-ROCCHIO_CAP, min(ROCCHIO_CAP, updated))
+
+
+def rebuild_rocchio_from_db(votes) -> None:
+    global _rocchio_deltas, pattern_data
+    _rocchio_deltas.clear()
+
+    id_to_index = {p.id: i for i, p in enumerate(pattern_data)}
+
+    for vote in votes:
+        idx = id_to_index.get(vote.pattern_id)
+        if idx is None:
+            continue
+        delta = ROCCHIO_ALPHA if vote.vote_type == "up" else -ROCCHIO_ALPHA
+        current = _rocchio_deltas.get(idx, 0.0)
+        _rocchio_deltas[idx] = max(-ROCCHIO_CAP, min(ROCCHIO_CAP, current + delta))
+
+
 def _cache_fingerprint(docs: list[str]) -> str:
     h = hashlib.sha1()
     h.update(str(N_COMPONENTS).encode())
@@ -146,7 +178,6 @@ def _title_all_term_score(query_tokens: list[str], title: str) -> float:
     return hits / len(query_tokens)
 
 
-
 def svd_search(query, skill_filter="", top_k=10):
     global vectorizer, svd, lsa_matrix, pattern_data
 
@@ -181,6 +212,8 @@ def svd_search(query, skill_filter="", top_k=10):
         title_any     = _title_any_term_score(query_tokens, title)
         title_all     = _title_all_term_score(query_tokens, title)
 
+        rocchio_delta = _rocchio_deltas.get(i, 0.0)
+
         final_score = (
             0.45 * lsa_score
             + 0.10 * overlap_score
@@ -188,6 +221,7 @@ def svd_search(query, skill_filter="", top_k=10):
             + 0.15 * title_any
             + 0.10 * title_all
             + 0.10 * fuzzy_score
+            + rocchio_delta          
         )
 
         if final_score > 0 or fuzzy_score > 0.7:
@@ -201,6 +235,7 @@ def svd_search(query, skill_filter="", top_k=10):
                     "title_any": round(title_any, 4),
                     "title_all": round(title_all, 4),
                     "fuzzy": round(fuzzy_score, 4),
+                    "rocchio": round(rocchio_delta, 4),
                     "corrected": effective_query,
                 },
             })
