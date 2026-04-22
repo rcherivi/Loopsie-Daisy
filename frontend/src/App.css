@@ -1052,6 +1052,38 @@
   cursor: not-allowed;
 }
 
+.thinking-block {
+  margin-bottom: 0.5rem;
+}
+
+.thinking-toggle {
+  background: none;
+  border: 1px solid #d4a8b0;
+  border-radius: 12px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.78rem;
+  color: #a0606e;
+  cursor: pointer;
+  margin-bottom: 0.4rem;
+  max-height: 33vh;
+  overflow-y: auto;
+}
+
+.thinking-toggle:hover {
+  background: #f7c9d4;
+}
+
+.thinking-text {
+  font-size: 0.82rem;
+  color: #888;
+  font-style: italic;
+  background: #fdf5f7;
+  border-left: 3px solid #f7c9d4;
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  white-space: pre-wrap;
+}
+
 /* footer */
 
 .app-footer {

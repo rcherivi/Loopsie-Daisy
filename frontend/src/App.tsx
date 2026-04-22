@@ -875,7 +875,17 @@ function App(): JSX.Element {
               ));
             })()}
         </div>
-        {useLlm && <Chat onSearchTerm={handleChatSearch} />}
+        {useLlm && (
+          <Chat
+            onSearchTerm={handleChatSearch}
+            summaryData={summaryData}
+            patterns={patterns.map((p) => ({
+              title: p.title,
+              description: p.description,
+              skill_level: p.skill_level,
+            }))}
+          />
+        )}
         <footer className="app-footer">
           <span className="app-footer-logo">Loopsie Daisy</span>
           <span className="app-footer-copy">

@@ -131,7 +131,6 @@ def summarize_results(results, modified_query):
             }
         }
 
-
 def register_chat_route(app, json_search):
     """Register the /api/chat SSE endpoint. Called from routes.py."""
 
@@ -139,6 +138,8 @@ def register_chat_route(app, json_search):
     def chat():
         data = request.get_json() or {}
         user_message = (data.get("message") or "").strip()
+        context = (data.get("context") or "").strip()
+
         if not user_message:
             return jsonify({"error": "Message is required"}), 400
 
@@ -147,29 +148,31 @@ def register_chat_route(app, json_search):
             return jsonify({"error": "SPARK_API_KEY not set — add it to your .env file"}), 500
 
         client = LLMClient(api_key=api_key)
-        use_search, search_term = llm_search_decision(client, user_message)
 
-        if use_search:
-            episodes = json_search(search_term or "Kardashian")
-            context_text = "\n\n---\n\n".join(
-                f"Title: {ep['title']}\nDescription: {ep['descr']}\nIMDB Rating: {ep['imdb_rating']}"
-                for ep in episodes
-            ) or "No matching episodes found."
+        if context:
             messages = [
-                {"role": "system", "content": "Answer questions about Keeping Up with the Kardashians using only the episode information provided."},
-                {"role": "user", "content": f"Episode information:\n\n{context_text}\n\nUser question: {user_message}"},
+                {"role": "system", "content": (
+                    "You are a helpful assistant for a crochet and knitting pattern search engine. "
+                    "Answer questions about the patterns shown in the search results. "
+                    "Use the context below to answer the user's question.\n\n"
+                    f"{context}"
+                )},
+                {"role": "user", "content": user_message},
             ]
         else:
             messages = [
-                {"role": "system", "content": "You are a helpful assistant for Keeping Up with the Kardashians questions."},
+                {"role": "system", "content": (
+                    "You are a helpful assistant for a crochet and knitting pattern search engine. "
+                    "Help users find and learn about crochet and knitting patterns."
+                )},
                 {"role": "user", "content": user_message},
             ]
 
         def generate():
-            if use_search and search_term:
-                yield f"data: {json.dumps({'search_term': search_term})}\n\n"
             try:
-                for chunk in client.chat(messages, stream=True):
+                for chunk in client.chat(messages, stream=True, show_thinking=True):
+                    if chunk.get("thinking"):
+                        yield f"data: {json.dumps({'thinking': chunk['thinking']})}\n\n"
                     if chunk.get("content"):
                         yield f"data: {json.dumps({'content': chunk['content']})}\n\n"
             except Exception as e:
@@ -181,6 +184,56 @@ def register_chat_route(app, json_search):
             mimetype="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
+
+# def register_chat_route(app, json_search):
+#     """Register the /api/chat SSE endpoint. Called from routes.py."""
+
+#     @app.route("/api/chat", methods=["POST"])
+#     def chat():
+#         data = request.get_json() or {}
+#         user_message = (data.get("message") or "").strip()
+#         if not user_message:
+#             return jsonify({"error": "Message is required"}), 400
+
+#         api_key = os.getenv("SPARK_API_KEY")
+#         if not api_key:
+#             return jsonify({"error": "SPARK_API_KEY not set — add it to your .env file"}), 500
+
+#         client = LLMClient(api_key=api_key)
+#         use_search, search_term = llm_search_decision(client, user_message)
+
+#         if use_search:
+#             episodes = json_search(search_term or "Kardashian")
+#             context_text = "\n\n---\n\n".join(
+#                 f"Title: {ep['title']}\nDescription: {ep['descr']}\nIMDB Rating: {ep['imdb_rating']}"
+#                 for ep in episodes
+#             ) or "No matching episodes found."
+#             messages = [
+#                 {"role": "system", "content": "Answer questions about Keeping Up with the Kardashians using only the episode information provided."},
+#                 {"role": "user", "content": f"Episode information:\n\n{context_text}\n\nUser question: {user_message}"},
+#             ]
+#         else:
+#             messages = [
+#                 {"role": "system", "content": "You are a helpful assistant for Keeping Up with the Kardashians questions."},
+#                 {"role": "user", "content": user_message},
+#             ]
+
+#         def generate():
+#             if use_search and search_term:
+#                 yield f"data: {json.dumps({'search_term': search_term})}\n\n"
+#             try:
+#                 for chunk in client.chat(messages, stream=True):
+#                     if chunk.get("content"):
+#                         yield f"data: {json.dumps({'content': chunk['content']})}\n\n"
+#             except Exception as e:
+#                 logger.error(f"Streaming error: {e}")
+#                 yield f"data: {json.dumps({'error': 'Streaming error occurred'})}\n\n"
+
+#         return Response(
+#             stream_with_context(generate()),
+#             mimetype="text/event-stream",
+#             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+#         )
 
 # def summarize_latent_dim(top_3_word_lists):
 #     dim_lines = "\n".join([
