@@ -443,15 +443,16 @@
 
 .dimension-container {
   width: 100%;
-  max-width: 60%;
+  max-width: 720px;
   margin: 0 auto;
 }
 
 .dimensions-panel {
   margin: 16px 0;
   padding: 16px;
-  background: #fff7fa;
   border-radius: 14px;
+  background: #fff9f0;
+  border: 1.5px solid #f7c9d4;
 }
 
 .dimensions-title {
@@ -499,7 +500,7 @@
 .dimensions-toggle-btn {
   font-size: 13px;
   font-weight: 700;
-  color: #5a2a36;
+  color: #a0606e;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -520,11 +521,14 @@
 .dimensions-triangle {
   display: inline-block;
   margin-right: 3px;
+  padding-left: 5px;
   transition: transform 0.2s ease;
 }
 
 .dimensions-triangle.open {
   transform: rotate(90deg);
+  margin-right: 3px;
+  padding-left: 5px;
 }
 
 .dimensions-empty {
@@ -541,7 +545,7 @@
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 44px 20px 80px;
+  padding: 0 20px 80px;
   display: flex;
   flex-direction: row;
   align-items: flex-start;
@@ -649,11 +653,15 @@
   height: 26px;
   cursor: pointer;
 
+  font-size: 16px;
+  font-family: "Nunito", sans-serif;
+
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 .flip-btn:hover {
-  background: #fff3f7;
+  background: #e0eea3;
+  border: 1px solid #8ab848;
 }
 
 
@@ -842,6 +850,13 @@
 }
 
 /* IR result summary */
+.summary-banner-container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
 .summary-banner {
   max-width: 720px;
   margin: 0 auto 1.5rem;
@@ -879,20 +894,25 @@
 }
 
 .summary-toggle-btn {
-  display: block;
-  margin: 0 0 0.6rem auto;
-  background: none;
-  border: 1.5px solid #f7c9d4;
-  border-radius: 20px;
+  font-family: "Nunito", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  border: 2px solid #f7c9d4;
+  border-radius: 16px;
+  background: linear-gradient(to right, #fbe0e6, #f7c9d4);
+  backdrop-filter: blur(16px);
   padding: 0.3rem 0.9rem;
-  font-size: 0.82rem;
   color: #a0606e;
   cursor: pointer;
-  transition: background 0.2s;
+  position: relative;
+  margin-left: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .summary-toggle-btn:hover {
-  background: #f7c9d4;
+  color: #5a2a36;
+  border-color: #d4607a;
+  background: #fbe0e6;
 }
 
 /* vote buttons */
@@ -1104,10 +1124,10 @@
 
 /* llm mode */
 
-.llm-mode .patterns-board {
+/* .llm-mode .patterns-board {
   max-height: 500px;
   overflow-y: auto;
-}
+} */
 
 /* chat */
 
@@ -1329,6 +1349,10 @@
   .patterns-board {
     columns: 2 160px;
     padding: 24px 8px 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
   .app-footer {
     flex-direction: column;

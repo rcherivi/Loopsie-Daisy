@@ -465,6 +465,7 @@ function App(): JSX.Element {
             </button>
           </div>
         </section>
+
         <header className="app-header">
           <div className="logo-container">
             <span className="app-header-logo">Loopsie Daisy</span>
@@ -475,6 +476,7 @@ function App(): JSX.Element {
           <div className="header-flowers" />
           <div className="app-header-icons" />
         </header>
+        
         {/* search */}
         <section className="search-section" ref={searchSectionRef}>
           <div className="search-row">
@@ -606,6 +608,27 @@ function App(): JSX.Element {
           </div>
         )}
 
+        {/* IR result summary banner */}
+        {hasSearch && summaryData && (
+          <div className="summary-banner-container">
+            <button
+              className="summary-toggle-btn"
+              onClick={() => setShowSummary((prev) => !prev)}
+            >
+              {showSummary ? "✨ Hide AI Summary" : "✨ Show AI Summary"}
+              <span className={`dimensions-triangle ${showSummary ? "open" : ""}`}>
+                  ▶
+              </span>
+            </button>
+            {showSummary && (
+              <SearchSummaryBanner
+                summary={summaryData.summary}
+                best_match={summaryData.best_match}
+              />
+            )}
+          </div>
+        )}
+
         {/* trending strip — always visible when no active search */}
         {!hasSearch && (
           <div className="featured-section">
@@ -631,23 +654,7 @@ function App(): JSX.Element {
             )}
           </div>
         )}
-        {/* IR result summary banner */}
-        {hasSearch && summaryData && (
-          <div className="summary-banner-container">
-            <button
-              className="summary-toggle-btn"
-              onClick={() => setShowSummary((prev) => !prev)}
-            >
-              {showSummary ? "▲ Hide AI Summary" : "▼ Show AI Summary"}
-            </button>
-            {showSummary && (
-              <SearchSummaryBanner
-                summary={summaryData.summary}
-                best_match={summaryData.best_match}
-              />
-            )}
-          </div>
-        )}
+
         {/* polaroid pinboard — only when searching */}
         <div
           className={`patterns-board${hasSearch ? "" : " patterns-board-hidden"}`}
