@@ -4,7 +4,6 @@ from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import normalize
 from sklearn.metrics.pairwise import cosine_similarity
 from ngram_search import ngram_sim
-from llm_routes import summarize_latent_dim
 from tfidf_search import word_overlap
 
 
@@ -112,13 +111,6 @@ def svd_search(query, skill_filter="", top_k=10):
         [get_top_words_for_dim(dim_idx, top_n=10) for dim_idx in top_3_dims]
         for top_3_dims in top_3_dims_per_pattern
     ]
-    dim_summaries = [
-        summarize_latent_dim(word_lists)
-        for word_lists in dim_words_per_pattern
-    ]
-
-    for i, (pat_idx, labels) in enumerate(zip(final_indices, dim_summaries)):
-        print(f"Pattern {i+1}: {pattern_data[pat_idx].title} → {labels}")
 
     results = []
     for rank, (pat_idx, score) in enumerate(zip(final_indices, final_scores_sorted)):
@@ -126,7 +118,7 @@ def svd_search(query, skill_filter="", top_k=10):
         results.append({
             "pattern_obj": pattern_data[pat_idx],
             "score": float(score),
-            "dim_summaries": dim_summaries[rank],
+            "dim_summaries": dim_words_per_pattern[rank],
             "_debug": {
                 "lsa":      round(float(kept_lsa[i_in_kept]), 4),
                 "overlap":  round(float(kept_overlaps[i_in_kept]), 4),

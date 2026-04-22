@@ -288,6 +288,38 @@ function PolaroidCard({
   );
 }
 
+/* IR result summary banner */
+function SearchSummaryBanner({
+  summary,
+  best_match,
+}: {
+  summary: string;
+  best_match: { name: string; link: string } | null;
+}) {
+  // Strip the "Best Match: ..." line from summary text since we display it separately
+  const summaryText = summary
+    .split("\n")
+    .filter((l) => !l.startsWith("Best Match:"))
+    .join(" ")
+    .trim();
+
+  return (
+    <div className="summary-banner">
+      <p className="summary-text">{summaryText}</p>
+      {best_match?.link && (
+        <a
+          className="best-match-link"
+          href={best_match.link}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ⭐ Best Match: {best_match.name}
+        </a>
+      )}
+    </div>
+  );
+}
+
 /* app */
 
 function App(): JSX.Element {
@@ -404,14 +436,22 @@ function App(): JSX.Element {
 
       try {
         const res = await fetch(`/api/patterns?${params.toString()}`);
-        const data: Pattern[] = await res.json();
+        /* const data: Pattern[] = await res.json();*/
+        /* changed to also get the IR summary and best match info from the response */
+        const data = await res.json();
 
         const elapsed = Date.now() - start;
         const minDisplay = 600;
         const delay = Math.max(0, minDisplay - elapsed);
         await new Promise((r) => setTimeout(r, delay));
 
-        setPatterns(data);
+        /*setPatterns(data);*/
+        setPatterns(data.results ?? []);
+        setSummaryData(
+          data.summary
+            ? { summary: data.summary, best_match: data.best_match }
+            : null,
+        );
         setResolved(true);
       } catch {
         setPatterns([]);
@@ -454,7 +494,8 @@ function App(): JSX.Element {
       setSearchTerm(text);
       setResolved(false);
       setPatterns([]);
-
+      /* to allow showing and hiding the IR results summary*/
+      setShowSummary(true);
       setIsFadingOut(false);
       setShowLoading(true);
 
@@ -497,6 +538,8 @@ function App(): JSX.Element {
     setInputValue("");
     setSearchTerm("");
     setPatterns([]);
+    /* clear the IR summary as well when clearing the search */
+    setSummaryData(null);
     setResolved(false);
     // fetchedDataRef.current = null;
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -529,6 +572,13 @@ function App(): JSX.Element {
     }
   }, []);
 
+  /* This is for the LLM summary of the IR results */
+  const [showSummary, setShowSummary] = useState(true);
+  const [summaryData, setSummaryData] = useState<{
+    summary: string;
+    best_match: { name: string; link: string } | null;
+  } | null>(null);
+
   if (useLlm === null) return <></>;
 
   const hasSearch = searchTerm.trim() !== "";
@@ -548,7 +598,6 @@ function App(): JSX.Element {
 
       <div className={`full-body-container ${useLlm ? "llm-mode" : ""}`}>
         <BgDaisies />
-
         {/* hero landing section */}
         <section className="hero-section">
           {/* watercolor daisies background */}
@@ -620,7 +669,6 @@ function App(): JSX.Element {
             </button>
           </div>
         </section>
-
         <header className="app-header">
           <div className="logo-container">
             <span className="app-header-logo">Loopsie Daisy</span>
@@ -631,7 +679,6 @@ function App(): JSX.Element {
           <div className="header-flowers" />
           <div className="app-header-icons" />
         </header>
-
         {/* search */}
         <section className="search-section" ref={searchSectionRef}>
           <div className="search-row">
@@ -739,7 +786,6 @@ function App(): JSX.Element {
             <TopKSelector value={topK} onChange={handleTopKChange} />
           </div>
         )}
-
         {/* trending strip — always visible when no active search */}
         {!hasSearch && (
           <div className="featured-section">
@@ -765,7 +811,23 @@ function App(): JSX.Element {
             )}
           </div>
         )}
-
+        {/* IR result summary banner */}
+        {hasSearch && summaryData && (
+          <div className="summary-banner-container">
+            <button
+              className="summary-toggle-btn"
+              onClick={() => setShowSummary((prev) => !prev)}
+            >
+              {showSummary ? "▲ Hide AI Summary" : "▼ Show AI Summary"}
+            </button>
+            {showSummary && (
+              <SearchSummaryBanner
+                summary={summaryData.summary}
+                best_match={summaryData.best_match}
+              />
+            )}
+          </div>
+        )}
         {/* polaroid pinboard — only when searching */}
         <div
           className={`patterns-board${hasSearch ? "" : " patterns-board-hidden"}`}
@@ -813,9 +875,7 @@ function App(): JSX.Element {
               ));
             })()}
         </div>
-
         {useLlm && <Chat onSearchTerm={handleChatSearch} />}
-
         <footer className="app-footer">
           <span className="app-footer-logo">Loopsie Daisy</span>
           <span className="app-footer-copy">

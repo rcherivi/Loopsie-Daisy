@@ -11,7 +11,7 @@ import re
 from collections import Counter
 import math
 from ngram_search import ngram_sim, word_overlap_score
-from llm_routes import modify_search_query
+from llm_routes import modify_search_query, summarize_results
 from tfidf_search import build_index, search
 
 # Ying changes
@@ -97,12 +97,13 @@ def json_search():
         search_query = raw_query
 
     raw_results = svd_search(search_query, skill, top_k) or []
+    summary = summarize_results(raw_results, search_query)
     formatted_results = []
     for item in raw_results:
         p = item["pattern_obj"]
         formatted_results.append(p.to_dict(score=float(item["score"])))
 
-    return formatted_results
+    return formatted_results, summary
 
 def register_routes(app):
     @app.before_first_request
@@ -124,8 +125,15 @@ def register_routes(app):
         return jsonify({"use_llm": USE_LLM})
 
     @app.route("/api/patterns")
+    #def patterns_search():
+        #return jsonify(json_search())
+    # changed to return IR summary and best match as well
     def patterns_search():
-        return jsonify(json_search())
+        formatted_results, summary = json_search()
+        return jsonify({
+            "results": formatted_results,
+            "summary": summary.get("summary", ""),
+            "best_match": summary.get("best_match", None)})
 
     @app.route("/api/patterns/trending")
     def patterns_trending():
