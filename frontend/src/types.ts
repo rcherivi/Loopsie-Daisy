@@ -9,4 +9,5 @@ export interface Pattern {
   score: number;
   upvotes?: number;
   downvotes?: number;
+  user_vote?: "up" | "down" | null;
 }

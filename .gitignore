@@ -32,3 +32,4 @@ package-lock.json
 # download from google drive
 data/images/
 data/crochet_pattern_by_project/
+src/.svd_cache/

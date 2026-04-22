@@ -1,33 +1,121 @@
+import os
+import hashlib
 import numpy as np
+import joblib
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import normalize
-from sklearn.metrics.pairwise import cosine_similarity
 from ngram_search import ngram_sim
 from tfidf_search import word_overlap
-
+from fuzzy_utils import (
+    build_fuzzy_vocab,
+    normalize_query,
+    fuzzy_title_score,
+    _tokenize,
+    stem_word,
+)
 
 vectorizer = None
 svd = None
-# latent semantics (with tfidf applied)
 lsa_matrix = None
 pattern_data = []
 
-# number of latent dimensions
 N_COMPONENTS = 600
+
+_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".svd_cache")
+
+_rocchio_deltas: dict[int, float] = {}
+
+
+ROCCHIO_ALPHA = 0.02
+
+
+ROCCHIO_CAP = 0.30
+
+
+def apply_rocchio_vote(pattern_index: int, vote_type: str) -> None:
+
+    delta = ROCCHIO_ALPHA if vote_type == "up" else -ROCCHIO_ALPHA
+    current = _rocchio_deltas.get(pattern_index, 0.0)
+    updated = current + delta
+    _rocchio_deltas[pattern_index] = max(-ROCCHIO_CAP, min(ROCCHIO_CAP, updated))
+
+
+def rebuild_rocchio_from_db(votes) -> None:
+    global _rocchio_deltas, pattern_data
+    _rocchio_deltas.clear()
+
+    id_to_index = {p.id: i for i, p in enumerate(pattern_data)}
+
+    for vote in votes:
+        idx = id_to_index.get(vote.pattern_id)
+        if idx is None:
+            continue
+        delta = ROCCHIO_ALPHA if vote.vote_type == "up" else -ROCCHIO_ALPHA
+        current = _rocchio_deltas.get(idx, 0.0)
+        _rocchio_deltas[idx] = max(-ROCCHIO_CAP, min(ROCCHIO_CAP, current + delta))
+
+
+def _cache_fingerprint(docs: list[str]) -> str:
+    h = hashlib.sha1()
+    h.update(str(N_COMPONENTS).encode())
+    for d in docs:
+        h.update(d.encode("utf-8", errors="replace"))
+    return h.hexdigest()[:16]
+
+
+def _cache_paths(fingerprint: str) -> dict:
+    return {
+        "vectorizer": os.path.join(_CACHE_DIR, f"{fingerprint}_vectorizer.joblib"),
+        "svd":        os.path.join(_CACHE_DIR, f"{fingerprint}_svd.joblib"),
+        "lsa_matrix": os.path.join(_CACHE_DIR, f"{fingerprint}_lsa.npy"),
+    }
+
+
+def _load_cache(fingerprint: str):
+    paths = _cache_paths(fingerprint)
+    if all(os.path.exists(p) for p in paths.values()):
+        print("SVD cache hit — loading from disk...")
+        vec = joblib.load(paths["vectorizer"])
+        sv  = joblib.load(paths["svd"])
+        lsa = np.load(paths["lsa_matrix"])
+        return vec, sv, lsa
+    return None, None, None
+
+
+def _save_cache(fingerprint: str, vec, sv, lsa: np.ndarray):
+    os.makedirs(_CACHE_DIR, exist_ok=True)
+    paths = _cache_paths(fingerprint)
+    joblib.dump(vec, paths["vectorizer"], compress=3)
+    joblib.dump(sv,  paths["svd"],        compress=3)
+    np.save(paths["lsa_matrix"], lsa)
+    print(f"SVD index cached to {_CACHE_DIR}")
+
+    for fname in os.listdir(_CACHE_DIR):
+        if not fname.startswith(fingerprint):
+            try:
+                os.remove(os.path.join(_CACHE_DIR, fname))
+            except OSError:
+                pass
 
 
 def build_svd_matrix(patterns):
     global vectorizer, svd, lsa_matrix, pattern_data
 
-    docs = []
-    pattern_data = []
+    pattern_data = list(patterns)
+    docs = [f"{p.title or ''} {p.description or ''}" for p in pattern_data]
 
-    for p in patterns:
-        title = p.title or ""
-        description = p.description or ""
-        docs.append(f"{title} {description}")
-        pattern_data.append(p)
+    fingerprint = _cache_fingerprint(docs)
+    vec, sv, lsa = _load_cache(fingerprint)
+
+    if vec is not None:
+        vectorizer, svd, lsa_matrix = vec, sv, lsa
+        build_fuzzy_vocab(pattern_data)
+        print(f"Index ready: {len(docs)} docs | LSA dims={lsa_matrix.shape[1]}")
+        return
+
+    print("Building SVD index from scratch (first run or data changed)...")
 
     vectorizer = TfidfVectorizer(
         stop_words="english",
@@ -38,15 +126,13 @@ def build_svd_matrix(patterns):
     )
     tfidf_matrix = vectorizer.fit_transform(docs)
 
-    # SVD dimension reduction
     n_components = min(N_COMPONENTS, tfidf_matrix.shape[1] - 1)
     svd = TruncatedSVD(n_components=n_components, random_state=42)
     lsa_raw = svd.fit_transform(tfidf_matrix)
-
-    # plot_optimal_k(patterns, max_k=min(1000, tfidf_matrix.shape[1] - 1))
-
-    # Normalizing the vectors for cosine similarity for pattern matching stage
     lsa_matrix = normalize(lsa_raw, norm="l2")
+
+    _save_cache(fingerprint, vectorizer, svd, lsa_matrix)
+    build_fuzzy_vocab(pattern_data)
 
     print(
         f"Index built: {len(docs)} docs | "
@@ -55,19 +141,60 @@ def build_svd_matrix(patterns):
         f"variance explained={svd.explained_variance_ratio_.sum():.1%}"
     )
 
+
+def _per_term_lsa_scores(query_tokens: list[str]) -> np.ndarray:
+    if not query_tokens:
+        return np.zeros(len(pattern_data))
+
+    per_term = []
+    for token in query_tokens:
+        term_tfidf = vectorizer.transform([token])
+        term_lsa = normalize(svd.transform(term_tfidf), norm="l2")
+        per_term.append((lsa_matrix @ term_lsa.T).flatten())
+
+    return np.mean(per_term, axis=0)
+
+
+def _title_any_term_score(query_tokens: list[str], title: str) -> float:
+    if not query_tokens or not title:
+        return 0.0
+    title_tokens = set(_tokenize(title))
+    title_stems  = set(stem_word(t) for t in title_tokens)
+    for qt in query_tokens:
+        if qt in title_tokens or stem_word(qt) in title_stems:
+            return 1.0
+    return 0.0
+
+
+def _title_all_term_score(query_tokens: list[str], title: str) -> float:
+    if not query_tokens or not title:
+        return 0.0
+    title_tokens = set(_tokenize(title))
+    title_stems  = set(stem_word(t) for t in title_tokens)
+    hits = sum(
+        1 for qt in query_tokens
+        if qt in title_tokens or stem_word(qt) in title_stems
+    )
+    return hits / len(query_tokens)
+
+
 def svd_search(query, skill_filter="", top_k=10):
     global vectorizer, svd, lsa_matrix, pattern_data
 
     if vectorizer is None or not query.strip():
         return []
+    
 
-    query_tfidf = vectorizer.transform([query])
-    query_lsa = normalize(svd.transform(query_tfidf), norm="l2")  # shape (1, n_components)
+
+    corrected_query, stemmed_query = normalize_query(query)
+    effective_query = corrected_query if corrected_query.strip() else query
+    query_tokens = _tokenize(effective_query)
     query_weights = query_lsa[0]
 
+    query_tfidf = vectorizer.transform([effective_query])
+    query_lsa   = normalize(svd.transform(query_tfidf), norm="l2")
     lsa_scores = (lsa_matrix @ query_lsa.T).flatten()
-
-    # Apply skill filter
+    
     indices = np.arange(len(pattern_data))
     if skill_filter:
         skill_filter_lower = skill_filter.lower()
@@ -79,25 +206,38 @@ def svd_search(query, skill_filter="", top_k=10):
     positive_mask = lsa_scores[indices] > 0
     indices = indices[positive_mask]
 
+
     if len(indices) == 0:
         return []
 
     # Vectorized text scoring (to uplift similar categories (hats, bags, etc.) and avoid matching based on adjectives only)
     titles = [pattern_data[i].title for i in indices]
-    title_overlap_scores = np.array([word_overlap(query, t) for t in titles])
+    # title_overlap_scores = np.array([word_overlap(query, t) for t in titles])
+    ngram_score   = np.array([ngram_sim(stemmed_query, combined_text) for combined_text in [f"{pattern_data[i].title} {pattern_data[i].description}" for i in indices]])
+    fuzzy_score   = np.array([fuzzy_title_score(query_tokens, title) for title in titles])
+    title_any = np.array([_title_any_term_score(query_tokens, title) for title in titles])
+    title_all = np.array([_title_all_term_score(query_tokens, title) for title in titles])
+    rocchio_deltas = np.array([_rocchio_deltas.get(i, 0.0) for i in indices])
 
-    final_scores = (
-        0.8  * lsa_scores[indices]
-        + 0.2  * title_overlap_scores
-    )
+    #per_term    = _per_term_lsa_scores(query_tokens)
+    #n_terms = max(len(query_tokens), 1)
+    #pt_w = min(0.3 + 0.1 * (n_terms - 1), 0.6)
+    #wh_w = 1.0 - pt_w
 
-    # Filter to top 80th percentile and if the scores are generally bad, then have a minimum threshold to prevent returning irrelevant results
+    final_scores = (0.55 * lsa_scores
+            + 0.10 * ngram_score
+            + 0.15 * title_any
+            + 0.10 * title_all
+            + 0.10 * fuzzy_score
+            + rocchio_deltas          
+        )
+    
+        # Filter to top 80th percentile and if the scores are generally bad, then have a minimum threshold to prevent returning irrelevant results
     threshold = np.percentile(final_scores, 80)
     keep_mask = (final_scores > threshold) & (final_scores > 0.05)
     kept_indices  = indices[keep_mask]
     kept_scores   = final_scores[keep_mask]
     kept_lsa      = lsa_scores[kept_indices]
-    kept_overlaps = title_overlap_scores[keep_mask]
 
     sort_order   = np.argsort(kept_scores)[::-1][:top_k]
     final_indices = kept_indices[sort_order]
@@ -115,19 +255,20 @@ def svd_search(query, skill_filter="", top_k=10):
     results = []
     for rank, (pat_idx, score) in enumerate(zip(final_indices, final_scores_sorted)):
         i_in_kept = sort_order[rank]
-        results.append({
-            "pattern_obj": pattern_data[pat_idx],
-            "score": float(score),
-            "dim_summaries": dim_words_per_pattern[rank],
-            "_debug": {
-                "lsa":      round(float(kept_lsa[i_in_kept]), 4),
-                "overlap":  round(float(kept_overlaps[i_in_kept]), 4),
-                "top_dims": top_3_dims_per_pattern[rank].tolist(),
+        if fuzzy_score[i_in_kept] > 0.7:
+            results.append({"pattern_obj": pattern_data[pat_idx], "score": max(score, fuzzy_score[i_in_kept] * 0.3), 
+                            "dim_summaries": dim_words_per_pattern[rank], 
+                            "_debug": {
+                                "lsa":      round(float(kept_lsa[i_in_kept]), 4),
+                                "top_dims": top_3_dims_per_pattern[rank].tolist(),
             },
         })
 
     return results
 
+    results.sort(key=lambda x: x["score"], reverse=True)
+    filtered = [x for x in results if x["score"] > 0.05]
+    return filtered[:top_k]
 
 def get_top_words_for_dim(dim_idx, top_n=10):
     """Returns the top words associated with a specific latent dimension."""
@@ -138,63 +279,3 @@ def get_top_words_for_dim(dim_idx, top_n=10):
     feature_names = vectorizer.get_feature_names_out()
     top_word_indices = svd.components_[dim_idx].argsort()[::-1][:top_n]
     return [feature_names[i] for i in top_word_indices]
-
-# old functions
-# def svd_search(query, skill_filter="", top_k = 10):
-#     global vectorizer, svd, lsa_matrix, pattern_data
-
-#     if vectorizer is None or not query.strip():
-#         return []
-
-
-#     query_tfidf = vectorizer.transform([query])
-#     query_lsa = normalize(svd.transform(query_tfidf), norm="l2")
-
-#     query_weights = query_lsa[0]
-#     # Get the indices of the 2 dimensions with the highest alignment to the query
-#     top_2_dim_indices = query_weights.argsort()[::-1][:2]
-    
-#     dim_words_list = []
-#     for dim_idx in top_2_dim_indices:
-#         words = get_top_words_for_dim(dim_idx, top_n=15) # Grab top 15 words
-#         dim_words_list.append(words)
-
-#     lsa_scores = (lsa_matrix @ query_lsa.T).flatten()
-
-#     results = []
-#     for i, lsa_score in enumerate(lsa_scores):
-#         pattern = pattern_data[i]
-
-#         if skill_filter and skill_filter.lower() not in (pattern.skill_level or "").lower():
-#             continue
-
-#         if lsa_score > 0:
-#             combined_text = f"{pattern.title} {pattern.description}"
-#             overlap_score = word_overlap(query, combined_text)
-#             ngram_score   = ngram_sim(query, combined_text)
-
-#             title_overlap_score = word_overlap(query, pattern.title)
-
-#             final_score = (
-#                 0.6 * lsa_score
-#                 + 0.15 * overlap_score
-#                 + 0.15 * ngram_score
-#                 + 0.1 * title_overlap_score
-#             )
-
-#             results.append({
-#                 "pattern_obj": pattern,
-#                 "score": final_score,
-#                 "_debug": {
-#                     "lsa": round(float(lsa_score), 4),
-#                     "overlap": round(overlap_score, 4),
-#                     "ngram": round(ngram_score, 4),
-#                 },
-#             })
-
-#     results.sort(key=lambda x: x["score"], reverse=True)
-#     threshold = np.percentile([r["score"] for r in results], 80)
-#     # setting dynamic threshold to filter out low-quality matches
-#     filtered = [x for x in results if x["score"] > threshold]
-#     return filtered[:top_k]
-

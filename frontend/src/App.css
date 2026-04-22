@@ -780,6 +780,10 @@
 .vote-down svg {
   color: #d4607a;
 }
+.vote-btn.vote-active {
+  background-color: #a0606e;
+  color: white;
+}
 
 /* view pattern link */
 

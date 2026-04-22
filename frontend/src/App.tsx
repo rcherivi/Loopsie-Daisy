@@ -206,6 +206,7 @@ function PolaroidCard({
   index: number;
   onVote?: (id: number, vote: "up" | "down") => void;
 }) {
+  const userVote = pattern.user_vote ?? null;
   const { tilt, pin } = useMemo(() => cardStyle(pattern), [pattern]);
   return (
     <div className={`polaroid-wrapper ${tilt}`}>
@@ -238,7 +239,7 @@ function PolaroidCard({
         {onVote && pattern.id && (
           <div className="vote-row">
             <button
-              className="vote-btn vote-up"
+              className={`vote-btn vote-up${userVote === "up" ? " vote-active" : ""}`}
               onClick={(e) => {
                 e.preventDefault();
                 onVote(pattern.id!, "up");
@@ -256,7 +257,7 @@ function PolaroidCard({
               <span>{pattern.upvotes ?? 0}</span>
             </button>
             <button
-              className="vote-btn vote-down"
+              className={`vote-btn vote-down${userVote === "down" ? " vote-active" : ""}`}
               onClick={(e) => {
                 e.preventDefault();
                 onVote(pattern.id!, "down");
@@ -322,6 +323,28 @@ function SearchSummaryBanner({
 
 /* app */
 
+/** Returns a persistent session token stored in localStorage. */
+function generateUUID(): string {
+  // crypto.randomUUID() requires a secure context (https). Fall back for http dev.
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+function getSessionToken(): string {
+  const KEY = "ld_session_token";
+  let token = localStorage.getItem(KEY);
+  if (!token) {
+    token = generateUUID();
+    localStorage.setItem(KEY, token);
+  }
+  return token;
+}
+
 function App(): JSX.Element {
   const [useLlm, setUseLlm] = useState<boolean | null>(null);
   const [inputValue, setInputValue] = useState<string>("");
@@ -358,7 +381,9 @@ function App(): JSX.Element {
     fetch("/api/config")
       .then((r) => r.json())
       .then((data) => setUseLlm(data.use_llm));
-    fetch("/api/patterns/trending?top_k=12")
+    fetch("/api/patterns/trending?top_k=12", {
+      headers: { "X-Session-Token": getSessionToken() },
+    })
       .then((r) => r.json())
       .then((data: Pattern[]) => setFeaturedPatterns(data))
       .catch(() => {});
@@ -435,9 +460,9 @@ function App(): JSX.Element {
       params.append("top_k", String(k));
 
       try {
-        const res = await fetch(`/api/patterns?${params.toString()}`);
-        /* const data: Pattern[] = await res.json();*/
-        /* changed to also get the IR summary and best match info from the response */
+        const res = await fetch(`/api/patterns?${params.toString()}`, {
+          headers: { "X-Session-Token": getSessionToken() },
+        });
         const data = await res.json();
 
         const elapsed = Date.now() - start;
@@ -554,21 +579,80 @@ function App(): JSX.Element {
   );
 
   const handleVote = useCallback(async (id: number, vote: "up" | "down") => {
+    const optimistic = (p: Pattern) => {
+      if (p.id !== id) return p;
+      const wasVote = p.user_vote;
+      const newVote = wasVote === vote ? null : vote;
+      const upDelta =
+        vote === "up" ? (newVote === "up" ? 1 : -1) : wasVote === "up" ? -1 : 0;
+      const downDelta =
+        vote === "down"
+          ? newVote === "down"
+            ? 1
+            : -1
+          : wasVote === "down"
+            ? -1
+            : 0;
+      return {
+        ...p,
+        user_vote: newVote as "up" | "down" | null,
+        upvotes: Math.max(0, (p.upvotes ?? 0) + upDelta),
+        downvotes: Math.max(0, (p.downvotes ?? 0) + downDelta),
+      };
+    };
+    setPatterns((prev) => prev.map(optimistic));
+    setFeaturedPatterns((prev) => prev.map(optimistic));
+
     try {
       const res = await fetch(`/api/patterns/${id}/vote`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-Token": getSessionToken(),
+        },
         body: JSON.stringify({ vote }),
       });
       const data = await res.json();
-      const update = (p: Pattern) =>
+      const confirm = (p: Pattern) =>
         p.id === id
-          ? { ...p, upvotes: data.upvotes, downvotes: data.downvotes }
+          ? {
+              ...p,
+              upvotes: data.upvotes,
+              downvotes: data.downvotes,
+              user_vote: data.user_vote,
+            }
           : p;
-      setPatterns((prev) => prev.map(update));
-      setFeaturedPatterns((prev) => prev.map(update));
+      setPatterns((prev) => prev.map(confirm));
+      setFeaturedPatterns((prev) => prev.map(confirm));
     } catch {
-      // silently ignore vote errors
+      const revert = (p: Pattern) => {
+        if (p.id !== id) return p;
+        const newVote = p.user_vote === vote ? null : vote;
+        const upDelta =
+          vote === "up"
+            ? newVote === null
+              ? 1
+              : -1
+            : p.user_vote === "up"
+              ? 1
+              : 0;
+        const downDelta =
+          vote === "down"
+            ? newVote === null
+              ? 1
+              : -1
+            : p.user_vote === "down"
+              ? 1
+              : 0;
+        return {
+          ...p,
+          user_vote: p.user_vote,
+          upvotes: Math.max(0, (p.upvotes ?? 0) + upDelta),
+          downvotes: Math.max(0, (p.downvotes ?? 0) + downDelta),
+        };
+      };
+      setPatterns((prev) => prev.map(revert));
+      setFeaturedPatterns((prev) => prev.map(revert));
     }
   }, []);
 
