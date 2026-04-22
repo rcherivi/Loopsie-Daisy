@@ -923,6 +923,16 @@
 
 /* back side of polaroid card */
 
+.polaroid-back-title {
+  font-family: "Caveat", cursive;
+  font-size: 17px;
+  font-weight: 600;
+  color: #5a2a36;
+  margin: 0;
+  line-height: 1.2;
+  padding-bottom: 5px;
+}
+
 /* latent dimensions */
 
 .polaroid-dimension-back {

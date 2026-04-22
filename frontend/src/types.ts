@@ -9,5 +9,16 @@ export interface Pattern {
   score: number;
   upvotes?: number;
   downvotes?: number;
-  dimension_words?: string[];
+  explanation?: {
+    keyword_matches?: string[];
+    shared_dimensions?: {
+      dim: number;
+      score: number;
+      words: string[];
+    }[];
+    top_dimension?: {
+      dim: number;
+      words: string[];
+    };
+  };
 }

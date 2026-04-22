@@ -160,7 +160,13 @@ def svd_search(query, skill_filter="", top_k = 10):
             results.append({
                 "pattern_obj": pattern,
                 "score": final_score,
-                "dimension_words": get_pattern_keywords(i, query_lsa),
+
+                "explanation": {
+                    "keyword_matches": get_keyword_matches(query, pattern),
+                    "shared_dimensions": get_shared_dimensions(i, query_lsa),
+                    "top_dimension": get_pattern_top_dimension(i)
+                },
+
                 "_debug": {
                     "lsa": round(float(lsa_score), 4),
                     "overlap": round(overlap_score, 4),
@@ -171,9 +177,9 @@ def svd_search(query, skill_filter="", top_k = 10):
     results.sort(key=lambda x: x["score"], reverse=True)
     filtered = [x for x in results if x["score"] > 0.05][:top_k]
 
-    for item in filtered:
-        idx = pattern_data.index(item["pattern_obj"])
-        item["dimension_words"] = get_pattern_keywords(idx, query_lsa)
+    # for item in filtered:
+    #     idx = pattern_data.index(item["pattern_obj"])
+    #     item["dimension_words"] = get_pattern_keywords(idx, query_lsa)
 
     return filtered
 
@@ -214,7 +220,7 @@ def get_top_dimensions(query_lsa, top_n=3, top_words=5):
     return dimensions
 
 
-def get_pattern_keywords(pattern_idx, query_lsa, top_k_words=5):
+def get_shared_dimensions(pattern_idx, query_lsa, top_n=2, top_k_words=5):
     global lsa_matrix, dimension_top_words
 
     pattern_vec = lsa_matrix[pattern_idx]
@@ -224,18 +230,36 @@ def get_pattern_keywords(pattern_idx, query_lsa, top_k_words=5):
     contribution = pattern_vec * query_vec
 
     # top contributing dimensions
-    top_dims = contribution.argsort()[::-1][:2]
+    top_dims = contribution.argsort()[::-1][:top_n]
 
-    words = []
+    results = []
 
     for dim in top_dims:
-        for w in dimension_top_words[dim]:
-            if len(w) < 3:
-                continue
-            if w not in words:
-                words.append(w)
+        results.append({
+            "dim": int(dim),
+            "score": float(contribution[dim]),
+            "words": dimension_top_words[dim][:top_k_words]
+        })
 
-            if len(words) >= top_k_words:
-                return words
+    return results
 
-    return words
+
+def get_keyword_matches(query, pattern):
+    q_tokens = set(query.lower().split())
+
+    text = f"{pattern.title} {pattern.description}".lower()
+    p_tokens = set(text.split())
+
+    return list(q_tokens & p_tokens)
+
+
+def get_pattern_top_dimension(pattern_idx):
+    global lsa_matrix, dimension_top_words
+
+    vec = lsa_matrix[pattern_idx]
+    dim = vec.argsort()[::-1][0]
+
+    return {
+        "dim": int(dim),
+        "words": dimension_top_words[dim][:5]
+    }

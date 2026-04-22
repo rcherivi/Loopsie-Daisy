@@ -100,7 +100,7 @@ def json_search():
         p = item["pattern_obj"]
         # formatted_results.append(p.to_dict(score=float(item["score"])))
         formatted = p.to_dict(score=float(item["score"]))
-        formatted["dimension_words"] = item.get("dimension_words", [])
+        formatted["explanation"] = item.get("explanation", {})
         formatted_results.append(formatted)
 
     return formatted_results

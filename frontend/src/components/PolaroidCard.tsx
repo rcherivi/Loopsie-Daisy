@@ -64,6 +64,7 @@ type Props = {
 export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
   const { tilt, pin } = useMemo(() => cardStyle(pattern), [pattern]);
   const [flipped, setFlipped] = useState(false);
+  const exp = pattern.explanation;
 
   return (
     <div className={`polaroid-wrapper ${tilt}`}>
@@ -166,10 +167,41 @@ export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
         {/* Backside of polaroid card */}
         <div className="polaroid-card back">
           <div className="polaroid-card-body">
-            <h3 className="polaroid-card-title">Top Key Words:</h3>
-            
+
+            {exp?.keyword_matches?.length ? (
+              <div>
+                <h4 className="polaroid-back-title">Keyword Match</h4>
+                <div className="dimension-words-container">
+                {exp.keyword_matches.map((w) => (
+                  <span className="dimension-word">{w}</span>
+                ))}
+                </div>
+              </div>
+            ) : null}
+
+            {exp?.shared_dimensions?.length ? (
+              <div>
+                <h4 className="polaroid-back-title">Shared Top Dimensions</h4>
+                {exp.shared_dimensions.map((d) => (
+                  <div key={d.dim}>
+                    <strong>Dim {d.dim}</strong>: {d.words.join(", ")}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {exp?.top_dimension && (
+              <div>
+                <h4 className="polaroid-back-title">Main theme</h4>
+                <div>
+                  Dim {exp.top_dimension.dim}:{" "}
+                  {exp.top_dimension.words.join(", ")}
+                </div>
+              </div>
+            )}
+
             <div className="polaroid-dimension-back">
-              {dimensions && dimensions.length > 0 ? (
+              {/* {dimensions && dimensions.length > 0 ? (
                 <div className="polaroid-dimension-words-container">
                   {dimensions.map((w, i) => (
                     <span key={i} className="polaroid-dimension-word">
@@ -181,7 +213,7 @@ export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
                 <p className="polaroid-dimension-empty">
                   No insights available.
                 </p>
-              )}
+              )} */}
 
               <button
                 className="flip-back-btn"
