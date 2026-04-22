@@ -9,8 +9,31 @@ import BgDaisies from "./components/BgDaisies";
 import TopKSelector from "./components/TopKSelector";
 import PolaroidCard from "./components/PolaroidCard";
 import DimensionsPanel from "./components/DimensionsPanel";
+import SearchSummaryBanner from "./components/SearchSummaryBanner";
 
 /* app */
+
+/** Returns a persistent session token stored in localStorage. */
+function generateUUID(): string {
+  // crypto.randomUUID() requires a secure context (https). Fall back for http dev.
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+function getSessionToken(): string {
+  const KEY = "ld_session_token";
+  let token = localStorage.getItem(KEY);
+  if (!token) {
+    token = generateUUID();
+    localStorage.setItem(KEY, token);
+  }
+  return token;
+}
 
 function App(): JSX.Element {
   const [useLlm, setUseLlm] = useState<boolean | null>(null);
@@ -53,7 +76,9 @@ function App(): JSX.Element {
     fetch("/api/config")
       .then((r) => r.json())
       .then((data) => setUseLlm(data.use_llm));
-    fetch("/api/patterns/trending?top_k=12")
+    fetch("/api/patterns/trending?top_k=12", {
+      headers: { "X-Session-Token": getSessionToken() },
+    })
       .then((r) => r.json())
       .then((data: Pattern[]) => setFeaturedPatterns(data))
       .catch(() => {});
@@ -130,15 +155,23 @@ function App(): JSX.Element {
       params.append("top_k", String(k));
 
       try {
-        const res = await fetch(`/api/patterns?${params.toString()}`);
-        const data: Pattern[] = await res.json();
+        const res = await fetch(`/api/patterns?${params.toString()}`, {
+          headers: { "X-Session-Token": getSessionToken() },
+        });
+        const data = await res.json();
 
         const elapsed = Date.now() - start;
         const minDisplay = 600;
         const delay = Math.max(0, minDisplay - elapsed);
         await new Promise((r) => setTimeout(r, delay));
 
-        setPatterns(data);
+        /*setPatterns(data);*/
+        setPatterns(data.results ?? []);
+        setSummaryData(
+          data.summary
+            ? { summary: data.summary, best_match: data.best_match }
+            : null,
+        );
         setResolved(true);
       } catch {
         setPatterns([]);
@@ -196,7 +229,8 @@ function App(): JSX.Element {
       setSearchTerm(text);
       setResolved(false);
       setPatterns([]);
-
+      /* to allow showing and hiding the IR results summary*/
+      setShowSummary(true);
       setIsFadingOut(false);
       setShowLoading(true);
 
@@ -241,6 +275,8 @@ function App(): JSX.Element {
     setInputValue("");
     setSearchTerm("");
     setPatterns([]);
+    /* clear the IR summary as well when clearing the search */
+    setSummaryData(null);
     setResolved(false);
     // fetchedDataRef.current = null;
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -255,23 +291,89 @@ function App(): JSX.Element {
   );
 
   const handleVote = useCallback(async (id: number, vote: "up" | "down") => {
+    const optimistic = (p: Pattern) => {
+      if (p.id !== id) return p;
+      const wasVote = p.user_vote;
+      const newVote = wasVote === vote ? null : vote;
+      const upDelta =
+        vote === "up" ? (newVote === "up" ? 1 : -1) : wasVote === "up" ? -1 : 0;
+      const downDelta =
+        vote === "down"
+          ? newVote === "down"
+            ? 1
+            : -1
+          : wasVote === "down"
+            ? -1
+            : 0;
+      return {
+        ...p,
+        user_vote: newVote as "up" | "down" | null,
+        upvotes: Math.max(0, (p.upvotes ?? 0) + upDelta),
+        downvotes: Math.max(0, (p.downvotes ?? 0) + downDelta),
+      };
+    };
+    setPatterns((prev) => prev.map(optimistic));
+    setFeaturedPatterns((prev) => prev.map(optimistic));
+
     try {
       const res = await fetch(`/api/patterns/${id}/vote`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Session-Token": getSessionToken(),
+        },
         body: JSON.stringify({ vote }),
       });
       const data = await res.json();
-      const update = (p: Pattern) =>
+      const confirm = (p: Pattern) =>
         p.id === id
-          ? { ...p, upvotes: data.upvotes, downvotes: data.downvotes }
+          ? {
+              ...p,
+              upvotes: data.upvotes,
+              downvotes: data.downvotes,
+              user_vote: data.user_vote,
+            }
           : p;
-      setPatterns((prev) => prev.map(update));
-      setFeaturedPatterns((prev) => prev.map(update));
+      setPatterns((prev) => prev.map(confirm));
+      setFeaturedPatterns((prev) => prev.map(confirm));
     } catch {
-      // silently ignore vote errors
+      const revert = (p: Pattern) => {
+        if (p.id !== id) return p;
+        const newVote = p.user_vote === vote ? null : vote;
+        const upDelta =
+          vote === "up"
+            ? newVote === null
+              ? 1
+              : -1
+            : p.user_vote === "up"
+              ? 1
+              : 0;
+        const downDelta =
+          vote === "down"
+            ? newVote === null
+              ? 1
+              : -1
+            : p.user_vote === "down"
+              ? 1
+              : 0;
+        return {
+          ...p,
+          user_vote: p.user_vote,
+          upvotes: Math.max(0, (p.upvotes ?? 0) + upDelta),
+          downvotes: Math.max(0, (p.downvotes ?? 0) + downDelta),
+        };
+      };
+      setPatterns((prev) => prev.map(revert));
+      setFeaturedPatterns((prev) => prev.map(revert));
     }
   }, []);
+
+  /* This is for the LLM summary of the IR results */
+  const [showSummary, setShowSummary] = useState(true);
+  const [summaryData, setSummaryData] = useState<{
+    summary: string;
+    best_match: { name: string; link: string } | null;
+  } | null>(null);
 
   if (useLlm === null) return <></>;
 
@@ -292,7 +394,6 @@ function App(): JSX.Element {
 
       <div className={`full-body-container ${useLlm ? "llm-mode" : ""}`}>
         <BgDaisies />
-
         {/* hero landing section */}
         <section className="hero-section">
           {/* watercolor daisies background */}
@@ -364,7 +465,16 @@ function App(): JSX.Element {
             </button>
           </div>
         </section>
-
+        <header className="app-header">
+          <div className="logo-container">
+            <span className="app-header-logo">Loopsie Daisy</span>
+            {/* <Daisy petalColor="#fdffdc" size={32} />
+            <Daisy petalColor="#f8f3f2" size={32} />
+            <Daisy petalColor="#edf9b5" size={32} /> */}
+          </div>
+          <div className="header-flowers" />
+          <div className="app-header-icons" />
+        </header>
         {/* search */}
         <section className="search-section" ref={searchSectionRef}>
           <div className="search-row">
@@ -521,7 +631,23 @@ function App(): JSX.Element {
             )}
           </div>
         )}
-
+        {/* IR result summary banner */}
+        {hasSearch && summaryData && (
+          <div className="summary-banner-container">
+            <button
+              className="summary-toggle-btn"
+              onClick={() => setShowSummary((prev) => !prev)}
+            >
+              {showSummary ? "▲ Hide AI Summary" : "▼ Show AI Summary"}
+            </button>
+            {showSummary && (
+              <SearchSummaryBanner
+                summary={summaryData.summary}
+                best_match={summaryData.best_match}
+              />
+            )}
+          </div>
+        )}
         {/* polaroid pinboard — only when searching */}
         <div
           className={`patterns-board${hasSearch ? "" : " patterns-board-hidden"}`}
@@ -569,9 +695,17 @@ function App(): JSX.Element {
               ));
             })()}
         </div>
-
-        {useLlm && <Chat onSearchTerm={handleChatSearch} />}
-
+        {useLlm && (
+          <Chat
+            onSearchTerm={handleChatSearch}
+            summaryData={summaryData}
+            patterns={patterns.map((p) => ({
+              title: p.title,
+              description: p.description,
+              skill_level: p.skill_level,
+            }))}
+          />
+        )}
         <footer className="app-footer">
           <span className="app-footer-logo">Loopsie Daisy</span>
           <span className="app-footer-copy">

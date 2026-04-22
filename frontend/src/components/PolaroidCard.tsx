@@ -62,6 +62,7 @@ type Props = {
 };
 
 export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
+  const userVote = pattern.user_vote ?? null;
   const { tilt, pin } = useMemo(() => cardStyle(pattern), [pattern]);
   const [flipped, setFlipped] = useState(false);
   const exp = pattern.explanation;
@@ -117,7 +118,7 @@ export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
           {onVote && pattern.id && (
             <div className="vote-row">
               <button
-                className="vote-btn vote-up"
+                className={`vote-btn vote-up${userVote === "up" ? " vote-active" : ""}`}
                 onClick={(e) => {
                   e.preventDefault();
                   onVote(pattern.id!, "up");
@@ -135,7 +136,7 @@ export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
                 <span>{pattern.upvotes ?? 0}</span>
               </button>
               <button
-                className="vote-btn vote-down"
+                className={`vote-btn vote-down${userVote === "down" ? " vote-active" : ""}`}
                 onClick={(e) => {
                   e.preventDefault();
                   onVote(pattern.id!, "down");

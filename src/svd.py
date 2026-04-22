@@ -1,86 +1,145 @@
-# import matplotlib
-# matplotlib.use("agg")
-# import matplotlib.pyplot as plt
+import os
+import hashlib
+import numpy as np
+import joblib
+import re
 
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import normalize
-from sklearn.metrics.pairwise import cosine_similarity
 from ngram_search import ngram_sim
-
 from tfidf_search import word_overlap
-
+from fuzzy_utils import (
+    build_fuzzy_vocab,
+    normalize_query,
+    fuzzy_title_score,
+    _tokenize,
+    stem_word,
+)
 
 vectorizer = None
 svd = None
-# latent semantics (with tfidf applied)
 lsa_matrix = None
 pattern_data = []
 
-# number of latent dimensions
 N_COMPONENTS = 600
-
 dimension_top_words = None
 
-import re
-import numpy as np
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-#import matplotlib.pyplot as plt
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.decomposition import TruncatedSVD
+_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".svd_cache")
 
-""" def plot_optimal_k(patterns, max_k=1000):
-    docs = [f"{p.title or ''} {p.description or ''}" for p in patterns]
+_rocchio_deltas: dict[int, float] = {}
 
-    vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1, 2), sublinear_tf=True, min_df=2)
-    tfidf_matrix = vectorizer.fit_transform(docs)
 
-    max_k = min(max_k, tfidf_matrix.shape[1] - 1)
+ROCCHIO_ALPHA = 0.02
 
-    svd = TruncatedSVD(n_components=max_k, random_state=42)
-    svd.fit(tfidf_matrix)
 
-    cumvar = np.cumsum(svd.explained_variance_ratio_)
-    ks = np.arange(1, max_k + 1)
+ROCCHIO_CAP = 0.30
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
-    ax1.plot(ks, cumvar, linewidth=2)
-    for threshold in [0.5, 0.7, 0.8]:
-        k_thresh = np.searchsorted(cumvar, threshold) + 1
-        ax1.axhline(threshold, linestyle="--", alpha=0.5, label=f"{int(threshold*100)}% → k={k_thresh}")
-        ax1.axvline(k_thresh, linestyle="--", alpha=0.3)
-    ax1.set_xlabel("Number of components (k)")
-    ax1.set_ylabel("Cumulative explained variance")
-    ax1.set_title("Elbow: pick k where curve flattens")
-    ax1.legend()
-    ax1.grid(alpha=0.3)
+def apply_rocchio_vote(pattern_index: int, vote_type: str) -> None:
 
-    ax2.plot(ks, svd.explained_variance_ratio_, linewidth=1.5, color="steelblue")
-    ax2.set_xlabel("Component index")
-    ax2.set_ylabel("Variance explained by component")
-    ax2.set_title("Scree plot: look for the 'drop-off'")
-    ax2.grid(alpha=0.3)
+    delta = ROCCHIO_ALPHA if vote_type == "up" else -ROCCHIO_ALPHA
+    current = _rocchio_deltas.get(pattern_index, 0.0)
+    updated = current + delta
+    _rocchio_deltas[pattern_index] = max(-ROCCHIO_CAP, min(ROCCHIO_CAP, updated))
 
-    plt.tight_layout()
-    plt.savefig("optimal_k.png", dpi=150)
-    plt.close()  # free memory
 
-    for t in [0.5, 0.6, 0.7, 0.8, 0.9]:
-        k = np.searchsorted(cumvar, t) + 1
-        print(f"  {int(t*100)}% variance explained at k={k}") """
+def rebuild_rocchio_from_db(votes) -> None:
+    global _rocchio_deltas, pattern_data
+    _rocchio_deltas.clear()
+
+    id_to_index = {p.id: i for i, p in enumerate(pattern_data)}
+
+    for vote in votes:
+        idx = id_to_index.get(vote.pattern_id)
+        if idx is None:
+            continue
+        delta = ROCCHIO_ALPHA if vote.vote_type == "up" else -ROCCHIO_ALPHA
+        current = _rocchio_deltas.get(idx, 0.0)
+        _rocchio_deltas[idx] = max(-ROCCHIO_CAP, min(ROCCHIO_CAP, current + delta))
+
+
+def _cache_fingerprint(docs: list[str]) -> str:
+    h = hashlib.sha1()
+    h.update(str(N_COMPONENTS).encode())
+    for d in docs:
+        h.update(d.encode("utf-8", errors="replace"))
+    return h.hexdigest()[:16]
+
+
+def _cache_paths(fingerprint: str) -> dict:
+    return {
+        "vectorizer": os.path.join(_CACHE_DIR, f"{fingerprint}_vectorizer.joblib"),
+        "svd":        os.path.join(_CACHE_DIR, f"{fingerprint}_svd.joblib"),
+        "lsa_matrix": os.path.join(_CACHE_DIR, f"{fingerprint}_lsa.npy"),
+    }
+
+
+def _load_cache(fingerprint: str):
+    paths = _cache_paths(fingerprint)
+    if all(os.path.exists(p) for p in paths.values()):
+        print("SVD cache hit — loading from disk...")
+        vec = joblib.load(paths["vectorizer"])
+        sv  = joblib.load(paths["svd"])
+        lsa = np.load(paths["lsa_matrix"])
+        return vec, sv, lsa
+    return None, None, None
+
+
+def _save_cache(fingerprint: str, vec, sv, lsa: np.ndarray):
+    os.makedirs(_CACHE_DIR, exist_ok=True)
+    paths = _cache_paths(fingerprint)
+    joblib.dump(vec, paths["vectorizer"], compress=3)
+    joblib.dump(sv,  paths["svd"],        compress=3)
+    np.save(paths["lsa_matrix"], lsa)
+    print(f"SVD index cached to {_CACHE_DIR}")
+
+    for fname in os.listdir(_CACHE_DIR):
+        if not fname.startswith(fingerprint):
+            try:
+                os.remove(os.path.join(_CACHE_DIR, fname))
+            except OSError:
+                pass
+
+
+def _build_dimension_top_words():
+    """Populate dimension_top_words from the current vectorizer and svd globals.
+    
+    Must be called any time vectorizer/svd are set (both cache-hit and fresh-build
+    paths), because dimension_top_words is never persisted to disk.
+    """
+    global dimension_top_words, vectorizer, svd
+
+    feature_names = vectorizer.get_feature_names_out()
+    dimension_top_words = []
+
+    for dim in range(svd.components_.shape[0]):
+        component = svd.components_[dim]
+        top_idx = component.argsort()[::-1][:15]
+        words = [feature_names[i] for i in top_idx]
+        dimension_top_words.append(words)
+
 
 def build_svd_matrix(patterns):
     global vectorizer, svd, lsa_matrix, pattern_data
 
-    docs = []
-    pattern_data = []
+    pattern_data = list(patterns)
+    docs = [f"{p.title or ''} {p.description or ''}" for p in pattern_data]
 
-    for p in patterns:
-        title = p.title or ""
-        description = p.description or ""
-        docs.append(f"{title} {description}")
-        pattern_data.append(p)
+    fingerprint = _cache_fingerprint(docs)
+    vec, sv, lsa = _load_cache(fingerprint)
+
+    if vec is not None:
+        vectorizer, svd, lsa_matrix = vec, sv, lsa
+        # BUG FIX: dimension_top_words must be rebuilt even on a cache hit,
+        # because it is derived from svd.components_ and is never saved to disk.
+        _build_dimension_top_words()
+        build_fuzzy_vocab(pattern_data)
+        print(f"Index ready: {len(docs)} docs | LSA dims={lsa_matrix.shape[1]}")
+        return
+
+    print("Building SVD index from scratch (first run or data changed)...")
 
     vectorizer = TfidfVectorizer(
         stop_words="english",
@@ -91,31 +150,16 @@ def build_svd_matrix(patterns):
     )
     tfidf_matrix = vectorizer.fit_transform(docs)
 
-    # SVD dimension reduction
     n_components = min(N_COMPONENTS, tfidf_matrix.shape[1] - 1)
     svd = TruncatedSVD(n_components=n_components, random_state=42)
     lsa_raw = svd.fit_transform(tfidf_matrix)
-
-    # plot_optimal_k(patterns, max_k=min(1000, tfidf_matrix.shape[1] - 1))
-
-    # Normalizing the vectors for cosine similarity for pattern matching stage
     lsa_matrix = normalize(lsa_raw, norm="l2")
 
-    # find top words of each dimension
-    global dimension_top_words
+    # BUG FIX: save cache and build fuzzy vocab only once (was duplicated).
+    _save_cache(fingerprint, vectorizer, svd, lsa_matrix)
+    build_fuzzy_vocab(pattern_data)
 
-    feature_names = vectorizer.get_feature_names_out()
-
-    dimension_top_words = []
-
-    for dim in range(svd.components_.shape[0]):
-        component = svd.components_[dim]
-
-        # only compute once
-        top_idx = component.argsort()[::-1][:15]
-        words = [feature_names[i] for i in top_idx]
-
-        dimension_top_words.append(words)
+    _build_dimension_top_words()
 
     print(
         f"Index built: {len(docs)} docs | "
@@ -125,64 +169,151 @@ def build_svd_matrix(patterns):
     )
 
 
-def svd_search(query, skill_filter="", top_k = 10):
+def _per_term_lsa_scores(query_tokens: list[str]) -> np.ndarray:
+    if not query_tokens:
+        return np.zeros(len(pattern_data))
+
+    per_term = []
+    for token in query_tokens:
+        term_tfidf = vectorizer.transform([token])
+        term_lsa = normalize(svd.transform(term_tfidf), norm="l2")
+        per_term.append((lsa_matrix @ term_lsa.T).flatten())
+
+    return np.mean(per_term, axis=0)
+
+
+def _title_any_term_score(query_tokens: list[str], title: str) -> float:
+    if not query_tokens or not title:
+        return 0.0
+    title_tokens = set(_tokenize(title))
+    title_stems  = set(stem_word(t) for t in title_tokens)
+    for qt in query_tokens:
+        if qt in title_tokens or stem_word(qt) in title_stems:
+            return 1.0
+    return 0.0
+
+
+def _title_all_term_score(query_tokens: list[str], title: str) -> float:
+    if not query_tokens or not title:
+        return 0.0
+    title_tokens = set(_tokenize(title))
+    title_stems  = set(stem_word(t) for t in title_tokens)
+    hits = sum(
+        1 for qt in query_tokens
+        if qt in title_tokens or stem_word(qt) in title_stems
+    )
+    return hits / len(query_tokens)
+
+
+def svd_search(query, skill_filter="", top_k=10):
     global vectorizer, svd, lsa_matrix, pattern_data
 
     if vectorizer is None or not query.strip():
         return []
 
-
-    query_tfidf = vectorizer.transform([query])
-    query_lsa = normalize(svd.transform(query_tfidf), norm="l2")
+    corrected_query, stemmed_query = normalize_query(query)
+    effective_query = corrected_query if corrected_query.strip() else query
+    query_tokens = _tokenize(effective_query)
+    query_tfidf = vectorizer.transform([effective_query])
+    query_lsa   = normalize(svd.transform(query_tfidf), norm="l2")
+    query_weights = query_lsa[0]
 
     lsa_scores = (lsa_matrix @ query_lsa.T).flatten()
 
+    indices = np.arange(len(pattern_data))
+    if skill_filter:
+        skill_filter_lower = skill_filter.lower()
+        indices = np.array([
+            i for i in indices
+            if skill_filter_lower in (pattern_data[i].skill_level or "").lower()
+        ])
+
+    # Only keep patterns with positive LSA scores
+    positive_mask = lsa_scores[indices] > 0
+    indices = indices[positive_mask]
+
+    if len(indices) == 0:
+        return []
+
+    # Slice lsa_scores down to the filtered index set so all arrays share the same shape
+    lsa_scores_filtered = lsa_scores[indices]
+
+    titles = [pattern_data[i].title for i in indices]
+    ngram_score    = np.array([ngram_sim(stemmed_query, f"{pattern_data[i].title} {pattern_data[i].description}") for i in indices])
+    fuzzy_score    = np.array([fuzzy_title_score(query_tokens, title) for title in titles])
+    title_any      = np.array([_title_any_term_score(query_tokens, title) for title in titles])
+    title_all      = np.array([_title_all_term_score(query_tokens, title) for title in titles])
+    rocchio_deltas = np.array([_rocchio_deltas.get(i, 0.0) for i in indices])
+
+    final_scores = (
+        0.55 * lsa_scores_filtered
+        + 0.10 * ngram_score
+        + 0.15 * title_any
+        + 0.10 * title_all
+        + 0.10 * fuzzy_score
+        + rocchio_deltas
+    )
+
+    # Filter to top 80th percentile; also enforce a minimum threshold
+    # to prevent returning irrelevant results when scores are generally low
+    threshold = np.percentile(final_scores, 80)
+    keep_mask     = (final_scores > threshold) & (final_scores > 0.05)
+    kept_indices  = indices[keep_mask]
+    kept_scores   = final_scores[keep_mask]
+    kept_lsa      = lsa_scores_filtered[keep_mask]
+    kept_fuzzy    = fuzzy_score[keep_mask]
+
+    if len(kept_indices) == 0:
+        return []
+
+    sort_order          = np.argsort(kept_scores)[::-1][:top_k]
+    final_indices       = kept_indices[sort_order]
+    final_scores_sorted = kept_scores[sort_order]
+
+    # Per-pattern: find top 3 contributing latent dimensions and summarize each
+    pattern_lsa_matrix     = lsa_matrix[final_indices]
+    dim_contributions      = pattern_lsa_matrix * query_weights  # shape (k, n_components)
+    top_3_dims_per_pattern = np.argsort(dim_contributions, axis=1)[:, ::-1][:, :3]
+    dim_words_per_pattern  = [
+        [get_top_words_for_dim(dim_idx, top_n=10) for dim_idx in top_3_dims]
+        for top_3_dims in top_3_dims_per_pattern
+    ]
+
     results = []
-    for i, lsa_score in enumerate(lsa_scores):
-        pattern = pattern_data[i]
-
-        if skill_filter and skill_filter.lower() not in (pattern.skill_level or "").lower():
-            continue
-
-        if lsa_score > 0:
-            combined_text = f"{pattern.title} {pattern.description}"
-            overlap_score = word_overlap(query, combined_text)
-            ngram_score   = ngram_sim(query, combined_text)
-
-            title_overlap_score = word_overlap(query, pattern.title)
-
-            final_score = (
-                0.6 * lsa_score
-                + 0.15 * overlap_score
-                + 0.15 * ngram_score
-                + 0.1 * title_overlap_score
-            )
-
-            results.append({
-                "pattern_obj": pattern,
-                "score": final_score,
-
-                "explanation": {
-                    "keyword_matches": get_keyword_matches(query, pattern),
-                    "shared_dimensions": get_shared_dimensions(i, query_lsa),
-                    "top_dimension": get_pattern_top_dimension(i)
+    for rank, (pat_idx, score) in enumerate(zip(final_indices, final_scores_sorted)):
+        # BUG FIX: kept_fuzzy and kept_lsa are already ordered by sort_order, so
+        # index them by `rank` (position in the sorted output), not sort_order[rank].
+        fuzz = kept_fuzzy[rank]
+        results.append({
+            "pattern_obj":   pattern_data[pat_idx],
+            "score":         max(score, fuzz * 0.3) if fuzz > 0.7 else score,
+            "dim_summaries": dim_words_per_pattern[rank],
+            "explanation": {
+                    "keyword_matches": get_keyword_matches(query, pattern_data[pat_idx]),
+                    "shared_dimensions": get_shared_dimensions(pat_idx, query_lsa),
+                    "top_dimension": get_pattern_top_dimension(pat_idx)
                 },
 
-                "_debug": {
-                    "lsa": round(float(lsa_score), 4),
-                    "overlap": round(overlap_score, 4),
-                    "ngram": round(ngram_score, 4),
-                },
-            })
+            "_debug": {
+                "lsa":      round(float(kept_lsa[rank]), 4),
+                "top_dims": top_3_dims_per_pattern[rank].tolist(),
+            },
+        })
 
     results.sort(key=lambda x: x["score"], reverse=True)
-    filtered = [x for x in results if x["score"] > 0.05][:top_k]
+    return [x for x in results if x["score"] > 0.05][:top_k]
 
-    # for item in filtered:
-    #     idx = pattern_data.index(item["pattern_obj"])
-    #     item["dimension_words"] = get_pattern_keywords(idx, query_lsa)
 
-    return filtered
+def get_top_words_for_dim(dim_idx, top_n=10):
+    """Returns the top words associated with a specific latent dimension."""
+    global vectorizer, svd
+    if not vectorizer or not svd:
+        return []
+
+    feature_names = vectorizer.get_feature_names_out()
+    top_word_indices = svd.components_[dim_idx].argsort()[::-1][:top_n]
+    return [feature_names[i] for i in top_word_indices]
+    # BUG FIX: removed dead/unreachable line that was here originally
 
 
 # Added function to get top dimensions - Fiona

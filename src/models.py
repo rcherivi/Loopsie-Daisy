@@ -1,8 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 db = SQLAlchemy()
 
-# Define crochet Pattern model
 class Pattern(db.Model):
     __tablename__ = 'patterns'
     
@@ -36,3 +36,20 @@ class Pattern(db.Model):
 
     def __repr__(self):
         return f'Pattern {self.id}: {self.title}'
+
+
+class Vote(db.Model):
+    __tablename__ = 'votes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_token = db.Column(db.String(128), nullable=False, index=True)
+    pattern_id = db.Column(db.Integer, db.ForeignKey('patterns.id'), nullable=False)
+    vote_type = db.Column(db.String(10), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('session_token', 'pattern_id', name='uq_session_pattern'),
+    )
+
+    def __repr__(self):
+        return f'Vote(session={self.session_token[:8]}... pattern={self.pattern_id} type={self.vote_type})'

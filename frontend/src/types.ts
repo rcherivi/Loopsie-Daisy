@@ -21,4 +21,5 @@ export interface Pattern {
       words: string[];
     };
   };
+  user_vote?: "up" | "down" | null;
 }

@@ -3,18 +3,22 @@ LLM chat route — only loaded when USE_LLM = True in routes.py.
 Adds a POST /api/chat endpoint that performs LLM-driven RAG.
 
 Setup:
-  1. Add API_KEY=your_key to .env
+  1. Add SPARK_API_KEY=your_key to .env
   2. Set USE_LLM = True in routes.py
 """
 import json
 import os
 import re
 import logging
+from urllib import response
 from flask import request, jsonify, Response, stream_with_context
 from infosci_spark_client import LLMClient
 
 logger = logging.getLogger(__name__)
-
+spark_key = os.getenv("SPARK_API_KEY")
+if not spark_key:
+    raise ValueError("SPARK_API_KEY environment variable is not set!")
+client = LLMClient(api_key=spark_key)
 
 def llm_search_decision(client, user_message):
     """Ask the LLM whether to search the DB and which word to use."""
@@ -42,6 +46,90 @@ def llm_search_decision(client, user_message):
         return True, "Kardashian"
     return False, None
 
+def modify_search_query(user_query: str) -> str:
+    """Uses the LLM to extract core themes and synonyms for better SVD retrieval."""
+    
+    prompt_query_modification = [
+        {"role": "system", "content": "Extract core themes, include synonyms, and remove filler words."},
+        {"role": "user", "content": user_query},
+    ]
+
+    try:
+        response = client.chat(prompt_query_modification, stream=False, show_thinking=False)
+        modified_query = response.get("content", user_query)
+        return modified_query.strip()
+    except Exception as e:
+        print(f"LLM query modification failed: {e}")
+        return user_query
+
+def summarize_results(results, modified_query):
+    """Given search results, extract and clean pattern names, provide a summary of the returned patterns,
+    common materials needed, and return the single best matching pattern with its link."""
+
+    filler_words = [
+        "free", "downloadable", "download", "pdf", "pattern", "digital",
+        "instant", "printable", "easy", "beginner", "advanced", "intermediate",
+        "crochet", "knit", "knitting", "crocheting"
+    ]
+
+    filler_pattern = re.compile(r'\b(' + '|'.join(filler_words) + r')\b', flags=re.IGNORECASE)
+
+    pattern_strings = []
+    for res in results:
+        pat = res["pattern_obj"]
+        title = getattr(pat, "title", "Unknown")
+        description = getattr(pat, "description", "")
+        link = getattr(pat, "pattern_link", "N/A")
+
+        raw_text = f"{title} {description}"
+        cleaned_text = filler_pattern.sub("", raw_text)
+        cleaned_text = " ".join(cleaned_text.split())
+
+        pattern_strings.append(f"- Name: {title} | Details: {cleaned_text} | Link: {link}")
+
+    pattern_block = "\n".join(pattern_strings)
+
+    prompt = [
+        {"role": "system", "content": (
+            "You are an expert crochet and knitting assistant.\n"
+            "Given a list of patterns, do the following:\n"
+            "1. Summarize the general vibe/aesthetic of the patterns in 1-2 sentences.\n"
+            "2. List the most commonly needed materials (include common hook sizes needed and common yarn weight) across these patterns in 1 sentence.\n"
+            f"3. Select the single pattern that best matches the user's query: '{modified_query}'. "
+            "Ensure it matches the requested item type and aesthetics.\n\n"
+            "You MUST include this exact line at the very end of your response:\n"
+            "Best Match: [Exact Pattern Name] | [Exact Link]"
+        )},
+        {"role": "user", "content": f"Here are the retrieved patterns:\n{pattern_block}"}
+    ]
+
+    try:
+        response = client.chat(prompt, stream=False, show_thinking=False)
+        content = response.get("content", "").strip()
+
+        best_match = None
+        for line in content.split("\n"):
+            if line.startswith("Best Match:"):
+                parts = line.replace("Best Match:", "").strip().split("|")
+                print (pattern_strings)
+                best_match = {
+                    "name": parts[0].strip() if len(parts) > 0 else "",
+                    "link": parts[1].strip() if len(parts) > 1 else None,
+                }
+                break
+
+        return {"summary": content, "best_match": best_match}
+
+    except Exception as e:
+        print(f"LLM summarization failed: {e}")
+        first = results[0]["pattern_obj"] if results else None
+        return {
+            "summary": "Could not generate summary.",
+            "best_match": {
+                "name": first.title if first else "",
+                "link": getattr(first, "pattern_link", None) if first else None,
+            }
+        }
 
 def register_chat_route(app, json_search):
     """Register the /api/chat SSE endpoint. Called from routes.py."""
@@ -50,37 +138,41 @@ def register_chat_route(app, json_search):
     def chat():
         data = request.get_json() or {}
         user_message = (data.get("message") or "").strip()
+        context = (data.get("context") or "").strip()
+
         if not user_message:
             return jsonify({"error": "Message is required"}), 400
 
-        api_key = os.getenv("API_KEY")
+        api_key = os.getenv("SPARK_API_KEY")
         if not api_key:
-            return jsonify({"error": "API_KEY not set — add it to your .env file"}), 500
+            return jsonify({"error": "SPARK_API_KEY not set — add it to your .env file"}), 500
 
         client = LLMClient(api_key=api_key)
-        use_search, search_term = llm_search_decision(client, user_message)
 
-        if use_search:
-            episodes = json_search(search_term or "Kardashian")
-            context_text = "\n\n---\n\n".join(
-                f"Title: {ep['title']}\nDescription: {ep['descr']}\nIMDB Rating: {ep['imdb_rating']}"
-                for ep in episodes
-            ) or "No matching episodes found."
+        if context:
             messages = [
-                {"role": "system", "content": "Answer questions about Keeping Up with the Kardashians using only the episode information provided."},
-                {"role": "user", "content": f"Episode information:\n\n{context_text}\n\nUser question: {user_message}"},
+                {"role": "system", "content": (
+                    "You are a helpful assistant for a crochet and knitting pattern search engine. "
+                    "Answer questions about the patterns shown in the search results. "
+                    "Use the context below to answer the user's question.\n\n"
+                    f"{context}"
+                )},
+                {"role": "user", "content": user_message},
             ]
         else:
             messages = [
-                {"role": "system", "content": "You are a helpful assistant for Keeping Up with the Kardashians questions."},
+                {"role": "system", "content": (
+                    "You are a helpful assistant for a crochet and knitting pattern search engine. "
+                    "Help users find and learn about crochet and knitting patterns."
+                )},
                 {"role": "user", "content": user_message},
             ]
 
         def generate():
-            if use_search and search_term:
-                yield f"data: {json.dumps({'search_term': search_term})}\n\n"
             try:
-                for chunk in client.chat(messages, stream=True):
+                for chunk in client.chat(messages, stream=True, show_thinking=True):
+                    if chunk.get("thinking"):
+                        yield f"data: {json.dumps({'thinking': chunk['thinking']})}\n\n"
                     if chunk.get("content"):
                         yield f"data: {json.dumps({'content': chunk['content']})}\n\n"
             except Exception as e:
@@ -92,3 +184,75 @@ def register_chat_route(app, json_search):
             mimetype="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
+
+# def register_chat_route(app, json_search):
+#     """Register the /api/chat SSE endpoint. Called from routes.py."""
+
+#     @app.route("/api/chat", methods=["POST"])
+#     def chat():
+#         data = request.get_json() or {}
+#         user_message = (data.get("message") or "").strip()
+#         if not user_message:
+#             return jsonify({"error": "Message is required"}), 400
+
+#         api_key = os.getenv("SPARK_API_KEY")
+#         if not api_key:
+#             return jsonify({"error": "SPARK_API_KEY not set — add it to your .env file"}), 500
+
+#         client = LLMClient(api_key=api_key)
+#         use_search, search_term = llm_search_decision(client, user_message)
+
+#         if use_search:
+#             episodes = json_search(search_term or "Kardashian")
+#             context_text = "\n\n---\n\n".join(
+#                 f"Title: {ep['title']}\nDescription: {ep['descr']}\nIMDB Rating: {ep['imdb_rating']}"
+#                 for ep in episodes
+#             ) or "No matching episodes found."
+#             messages = [
+#                 {"role": "system", "content": "Answer questions about Keeping Up with the Kardashians using only the episode information provided."},
+#                 {"role": "user", "content": f"Episode information:\n\n{context_text}\n\nUser question: {user_message}"},
+#             ]
+#         else:
+#             messages = [
+#                 {"role": "system", "content": "You are a helpful assistant for Keeping Up with the Kardashians questions."},
+#                 {"role": "user", "content": user_message},
+#             ]
+
+#         def generate():
+#             if use_search and search_term:
+#                 yield f"data: {json.dumps({'search_term': search_term})}\n\n"
+#             try:
+#                 for chunk in client.chat(messages, stream=True):
+#                     if chunk.get("content"):
+#                         yield f"data: {json.dumps({'content': chunk['content']})}\n\n"
+#             except Exception as e:
+#                 logger.error(f"Streaming error: {e}")
+#                 yield f"data: {json.dumps({'error': 'Streaming error occurred'})}\n\n"
+
+#         return Response(
+#             stream_with_context(generate()),
+#             mimetype="text/event-stream",
+#             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+#         )
+
+# def summarize_latent_dim(top_3_word_lists):
+#     dim_lines = "\n".join([
+#         f"Dim {j+1}: {', '.join(words)}"
+#         for j, words in enumerate(top_3_word_lists)
+#     ])
+
+#     prompt = [
+#         {"role": "system", "content": "You are a concise semantic labeler. Respond only in the exact format requested."},
+#         {"role": "user", "content": (
+#             "Below are 3 latent semantic dimensions represented by their top words.\n"
+#             "For each dimension, respond with a 1-3 word label capturing the core concept. Remove irrelevant terms such as downloadable, free, etc., avoid repetition, avoid common words such as knitting, crocheting, patterns, textiles, yarn products, yarn and fiber, material variety, etc. These words should aim to describe the general theme or vibe.\n\n"
+#             f"{dim_lines}\n\n"
+#             "Respond ONLY with a single line in this exact format, no extra text:\n"
+#             "[label1, label2, label3]"
+#         )}
+#     ]
+
+#     response = client.chat(prompt, stream=False, show_thinking=False)
+#     text = response["content"].strip("[]")
+#     labels = [l.strip() for l in text.split(",")]
+#     return labels

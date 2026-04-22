@@ -841,6 +841,60 @@
   border-radius: 4px;
 }
 
+/* IR result summary */
+.summary-banner {
+  max-width: 720px;
+  margin: 0 auto 1.5rem;
+  background: #fff9f0;
+  border: 1.5px solid #f7c9d4;
+  border-radius: 14px;
+  padding: 1rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.summary-text {
+  font-size: 0.95rem;
+  color: #5a3a3a;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.best-match-link {
+  display: inline-block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #a0606e;
+  text-decoration: none;
+  border: 1.5px solid #f7c9d4;
+  border-radius: 20px;
+  padding: 0.3rem 0.9rem;
+  align-self: flex-start;
+  transition: background 0.2s;
+}
+
+.best-match-link:hover {
+  background: #f7c9d4;
+}
+
+.summary-toggle-btn {
+  display: block;
+  margin: 0 0 0.6rem auto;
+  background: none;
+  border: 1.5px solid #f7c9d4;
+  border-radius: 20px;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.82rem;
+  color: #a0606e;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.summary-toggle-btn:hover {
+  background: #f7c9d4;
+}
+
 /* vote buttons */
 
 .vote-row {
@@ -888,6 +942,10 @@
 }
 .vote-down svg {
   color: #d4607a;
+}
+.vote-btn.vote-active {
+  background-color: #a0606e;
+  color: white;
 }
 
 /* view pattern link */
@@ -1189,6 +1247,38 @@
 .chat-bar .input-row button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.thinking-block {
+  margin-bottom: 0.5rem;
+}
+
+.thinking-toggle {
+  background: none;
+  border: 1px solid #d4a8b0;
+  border-radius: 12px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.78rem;
+  color: #a0606e;
+  cursor: pointer;
+  margin-bottom: 0.4rem;
+  max-height: 33vh;
+  overflow-y: auto;
+}
+
+.thinking-toggle:hover {
+  background: #f7c9d4;
+}
+
+.thinking-text {
+  font-size: 0.82rem;
+  color: #888;
+  font-style: italic;
+  background: #fdf5f7;
+  border-left: 3px solid #f7c9d4;
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  white-space: pre-wrap;
 }
 
 /* footer */
