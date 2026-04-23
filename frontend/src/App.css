@@ -977,7 +977,7 @@
   display: block;
   margin-top: 10px;
   padding: 10px 0;
-  background: #d66a83;
+  background: #db89a1;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -989,13 +989,13 @@
   transition:
     background 0.15s,
     color 0.15s;
-  border-top: 1px solid #f0b8c8;
+  border-top: 1px solid rgb(205, 152, 167);
 }
 
 .polaroid-card-link:hover {
-  background: #b84060;
+  background: #b4596e;
   color: #fff;
-  border-top-color: #d4607a;
+  border-top-color: rgb(167, 79, 100);
 }
 
 .patterns-board-hidden {
