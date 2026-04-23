@@ -231,7 +231,8 @@ function App(): JSX.Element {
       setResolved(false);
       setPatterns([]);
       /* to allow showing and hiding the IR results summary*/
-      setShowSummary(true);
+      setShowSummary(false);
+      setShowDimensions(false);
       setIsFadingOut(false);
       setShowLoading(true);
 

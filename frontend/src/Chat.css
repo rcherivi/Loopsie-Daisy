@@ -181,9 +181,9 @@
 }
 
 .message.assistant p {
-  background: #f1f9e2;
+  background: #fff1f4;
   color: #5a2a36;
-  border: 1px solid #e0eea3;
+  border: 1px solid #f0b8c8;
   border-bottom-left-radius: 4px;
   font-weight: 500;
 }

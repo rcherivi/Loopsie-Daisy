@@ -173,9 +173,9 @@ export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
               <div>
                 <h4 className="polaroid-back-title">Keyword Match</h4>
                 <div className="dimension-words-container">
-                {exp.keyword_matches.map((w) => (
-                  <span className="dimension-word">{w}</span>
-                ))}
+                  {exp.keyword_matches.map((w) => (
+                    <span className="dimension-word">{w}</span>
+                  ))}
                 </div>
               </div>
             ) : null}
@@ -183,20 +183,25 @@ export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
             {exp?.shared_dimensions?.length ? (
               <div>
                 <h4 className="polaroid-back-title">Shared Top Dimensions</h4>
-                {exp.shared_dimensions.map((d) => (
-                  <div key={d.dim}>
-                    <strong>Dim {d.dim}</strong>: {d.words.join(", ")}
-                  </div>
-                ))}
+                <div className="dimension-words-container">
+                  {exp.shared_dimensions.map((d) => (
+                    <div className="dimension-polaroid-words" key={d.dim}>
+                      <strong className="dimension-bold">Dim {d.dim}</strong>
+                      <span>{d.words.join(", ")}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
 
             {exp?.top_dimension && (
               <div>
                 <h4 className="polaroid-back-title">Main theme</h4>
-                <div>
-                  Dim {exp.top_dimension.dim}:{" "}
-                  {exp.top_dimension.words.join(", ")}
+                <div className="dimension-words-container">
+                  <div className="dimension-polaroid-words">
+                    <strong className="dimension-bold">Dim {exp.top_dimension.dim}</strong>
+                    <span>{exp.top_dimension.words.join(", ")}</span>
+                  </div>
                 </div>
               </div>
             )}

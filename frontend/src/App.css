@@ -1012,6 +1012,7 @@
   margin: 0;
   line-height: 1.2;
   padding-bottom: 5px;
+  padding-bottom: 10px;
 }
 
 /* latent dimensions */
@@ -1021,16 +1022,36 @@
   text-align: center;
 }
 
+.dimension-polaroid-words {
+  font-size: 12px;
+  color: #7a4050;
+  line-height: 1.55;
+  font-family: "Nunito", sans-serif;
+  display: flex;
+}
+
+.dimension-bold {
+  min-width: 70px;
+}
 
 .flip-back-btn {
   margin-top: 10px;
   font-size: 11px;
-  background: none;
-  border: none;
-  color: #a0606e;
+  padding: 4px 10px;
+  border-radius: 50px;
+  border: 1.5px solid #f0b8c8;
+  background: #fff;
+  font-family: "Nunito", sans-serif;
+  font-weight: 700;
   cursor: pointer;
+  color: #a0606e;
 }
 
+.flip-back-btn:hover {
+  border-color: #d4607a;
+  background: #fbe0e6;
+  color: #5a2a36;
+}
 
 .featured-section {
   width: 100%;
