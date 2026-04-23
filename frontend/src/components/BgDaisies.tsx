@@ -1,5 +1,3 @@
-import React from "react";
-
 // daisy
 // function Daisy({
 //   petalColor,

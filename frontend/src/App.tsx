@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import "./App.css";
 import { Pattern } from "./types";
 import LoadingScreen from "./LoadingScreen";
 
 import Chat from "./Chat";
-import "./Chat.css"
+import "./Chat.css";
 import BgDaisies from "./components/BgDaisies";
 import TopKSelector from "./components/TopKSelector";
 import PolaroidCard from "./components/PolaroidCard";
@@ -55,7 +55,6 @@ function App(): JSX.Element {
   // add dimensions
   const [showDimensions, setShowDimensions] = useState(false);
   const [topDimensions, setTopDimensions] = useState<any[]>([]);
-
 
   useEffect(() => {
     const board = boardRef.current;
@@ -195,7 +194,7 @@ function App(): JSX.Element {
 
     try {
       const res = await fetch(
-        `/api/query-dimensions?title=${encodeURIComponent(query)}`
+        `/api/query-dimensions?title=${encodeURIComponent(query)}`,
       );
       const data = await res.json();
       setTopDimensions(data || []);
@@ -238,7 +237,7 @@ function App(): JSX.Element {
 
       runFetch(text, skill, k);
       // add fetch dimensions - Fiona
-      fetchDimensions(text); 
+      fetchDimensions(text);
     },
     [runFetch, topK],
   );
@@ -399,10 +398,8 @@ function App(): JSX.Element {
 
         {/* hero landing section */}
         <section className="hero-section">
-
           {/* watercolor daisies background */}
           <div className="hero-content">
-
             {/* stems */}
             <path
               d="M90 480 C88 420 78 360 72 290"
@@ -582,22 +579,21 @@ function App(): JSX.Element {
                 {patterns.length === 1 ? "pattern" : "patterns"}
               </strong>{" "}
               found
-
-              <button 
+              <button
                 className="dimensions-toggle-btn"
                 onClick={() => setShowDimensions((prev) => !prev)}
               >
-                <span className={`dimensions-triangle ${showDimensions ? "open" : ""}`}>
+                <span
+                  className={`dimensions-triangle ${showDimensions ? "open" : ""}`}
+                >
                   ▶
                 </span>
                 {showDimensions ? "Hide Insights" : "Show Insights"}
               </button>
             </p>
-            
-            
           )}
         </section>
-        
+
         {/* Top K Selector */}
         {hasSearch && (
           <div className="topk-container">
@@ -608,9 +604,7 @@ function App(): JSX.Element {
         {/* SVD latent dimensions */}
         {hasSearch && (
           <div className="dimension-container">
-            {showDimensions && (
-              <DimensionsPanel data={topDimensions} />
-            )}
+            {showDimensions && <DimensionsPanel data={topDimensions} />}
           </div>
         )}
 
@@ -622,8 +616,10 @@ function App(): JSX.Element {
               onClick={() => setShowSummary((prev) => !prev)}
             >
               {showSummary ? "✨ Hide AI Summary" : "✨ Show AI Summary"}
-              <span className={`dimensions-triangle ${showSummary ? "open" : ""}`}>
-                  ▶
+              <span
+                className={`dimensions-triangle ${showSummary ? "open" : ""}`}
+              >
+                ▶
               </span>
             </button>
             {showSummary && (
@@ -715,21 +711,20 @@ function App(): JSX.Element {
             © 2026 Loopsie Daisy. Stitched with love.
           </span>
         </footer>
-
       </div>
 
       {/* LLM Search  */}
-        {useLlm && (
-          <Chat
-            onSearchTerm={handleChatSearch}
-            summaryData={summaryData}
-            patterns={patterns.map((p) => ({
-              title: p.title,
-              description: p.description,
-              skill_level: p.skill_level,
-            }))}
-          />
-        )}
+      {useLlm && (
+        <Chat
+          onSearchTerm={handleChatSearch}
+          summaryData={summaryData}
+          patterns={patterns.map((p) => ({
+            title: p.title,
+            description: p.description,
+            skill_level: p.skill_level,
+          }))}
+        />
+      )}
     </>
   );
 }

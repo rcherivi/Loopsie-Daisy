@@ -61,7 +61,7 @@ type Props = {
   dimensions?: string[];
 };
 
-export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
+export default function PolaroidCard({ pattern, onVote }: Props) {
   const userVote = pattern.user_vote ?? null;
   const { tilt, pin } = useMemo(() => cardStyle(pattern), [pattern]);
   const [flipped, setFlipped] = useState(false);
@@ -72,10 +72,8 @@ export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
       <Pin colorClass={pin} />
 
       <div className={`polaroid-flip ${flipped ? "flipped" : ""}`}>
-
         {/* front side of polaroid card */}
         <div className="polaroid-card front">
-
           {/* button to flip to other side */}
           <button
             className="flip-btn"
@@ -94,8 +92,10 @@ export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
               loading="lazy"
               decoding="async"
               src={
-                new URL(`../assets/images/${pattern.image_path}`, import.meta.url)
-                  .href
+                new URL(
+                  `../assets/images/${pattern.image_path}`,
+                  import.meta.url,
+                ).href
               }
               alt={pattern.title}
               className="polaroid-card-img"
@@ -168,7 +168,6 @@ export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
         {/* Backside of polaroid card */}
         <div className="polaroid-card back">
           <div className="polaroid-card-body">
-
             {exp?.keyword_matches?.length ? (
               <div>
                 <h4 className="polaroid-back-title">Keyword Match</h4>
@@ -199,7 +198,9 @@ export default function PolaroidCard({ pattern, onVote, dimensions, }: Props) {
                 <h4 className="polaroid-back-title">Main theme</h4>
                 <div className="dimension-words-container">
                   <div className="dimension-polaroid-words">
-                    <strong className="dimension-bold">Dim {exp.top_dimension.dim}</strong>
+                    <strong className="dimension-bold">
+                      Dim {exp.top_dimension.dim}
+                    </strong>
                     <span>{exp.top_dimension.words.join(", ")}</span>
                   </div>
                 </div>
