@@ -23,7 +23,7 @@ svd = None
 lsa_matrix = None
 pattern_data = []
 
-N_COMPONENTS = 600
+N_COMPONENTS = 350
 dimension_top_words = None
 
 _CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".svd_cache")

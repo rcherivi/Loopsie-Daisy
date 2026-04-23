@@ -50,13 +50,30 @@ def modify_search_query(user_query: str) -> str:
     """Uses the LLM to extract core themes and synonyms for better SVD retrieval."""
     
     prompt_query_modification = [
-        {"role": "system", "content": "Extract core themes, include synonyms, and remove filler words."},
+        # {"role": "system", "content": "Extract core themes, include synonyms, and remove filler words."},
+        {"role": "system", "content": (
+    "You are a search query optimizer for a crochet and knitting pattern database. "
+    "Your job: rewrite the user's query as a concise list of keywords that will best match "
+    "pattern titles and descriptions in the database.\n\n"
+    "Rules:\n"
+    "- Output ONLY a comma-separated list of keywords, no other text\n"
+    "- Keep the core item type (e.g. 'sweater', 'hat', 'blanket') — never drop it\n"
+    "- Add 2-4 relevant synonyms or style descriptors (e.g. 'cozy' → 'chunky warm oversized')\n"
+    "- Remove filler words: free, easy, beginner, download, pdf, pattern, crochet, knit\n"
+    "- Do NOT invent materials or colors not implied by the query\n"
+    "- Max 10 keywords total\n\n"
+    "Example:\n"
+    "User: cute boho summer top\n"
+    "Output: top, crop, bohemian, breezy, lace, festival, sleeveless, open-back"
+)},
+# {"role": "user", "content": user_query},
         {"role": "user", "content": user_query},
     ]
 
     try:
-        response = client.chat(prompt_query_modification, stream=False, show_thinking=False)
+        response = client.chat(prompt_query_modification, stream=False, show_thinking=False, temperature=0)
         modified_query = response.get("content", user_query)
+        print (modified_query)
         return modified_query.strip()
     except Exception as e:
         print(f"LLM query modification failed: {e}")
@@ -111,7 +128,6 @@ def summarize_results(results, modified_query):
         for line in content.split("\n"):
             if line.startswith("Best Match:"):
                 parts = line.replace("Best Match:", "").strip().split("|")
-                print (pattern_strings)
                 best_match = {
                     "name": parts[0].strip() if len(parts) > 0 else "",
                     "link": parts[1].strip() if len(parts) > 1 else None,

@@ -5,8 +5,28 @@ from ngram_search import ngram_sim, word_overlap_score
 from llm_routes import modify_search_query, summarize_results
 from tfidf_search import build_index, search
 from svd import build_svd_matrix, svd_search, apply_rocchio_vote, rebuild_rocchio_from_db, transform_query, get_top_dimensions
+from functools import lru_cache
+import threading
+
 
 USE_LLM = True  # Set to False to disable LLM features and use raw search instead
+
+_query_cache: dict[tuple[str, str | None], str] = {}
+_query_cache_lock = threading.Lock()
+
+def _get_modified_query(raw_query: str, token: str | None) -> str:
+    """Return cached modified query, or call LLM and cache the result."""
+    cache_key = (raw_query.strip().lower(), token)
+    with _query_cache_lock:
+        if cache_key in _query_cache:
+            print(f"Cache hit for query='{raw_query}' token={token}")
+            return _query_cache[cache_key]
+    
+    modified = modify_search_query(raw_query)
+    
+    with _query_cache_lock:
+        _query_cache[cache_key] = modified
+    return modified
 
 def _get_session_token() -> str | None:
     token = request.headers.get("X-Session-Token", "").strip()
@@ -34,11 +54,13 @@ def json_search():
     top_k = request.args.get("top_k", default=10, type=int)
     token = _get_session_token()
 
-    if USE_LLM and raw_query:
-        search_query = modify_search_query(raw_query)
-        print(f"Original Query: {raw_query} | Modified for SVD: {search_query}")
-    else:
-        search_query = raw_query
+    # if USE_LLM and raw_query:
+    #     # search_query = modify_search_query(raw_query)
+    #     search_query = _get_modified_query(raw_query, token)
+
+    #     print(f"Original Query: {raw_query} | Modified for SVD: {search_query}")
+    # else:
+    search_query = raw_query
 
     raw_results = svd_search(search_query, skill, top_k) or []
     summary = summarize_results(raw_results, search_query)
