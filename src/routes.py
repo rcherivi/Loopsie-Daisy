@@ -54,13 +54,13 @@ def json_search():
     top_k = request.args.get("top_k", default=10, type=int)
     token = _get_session_token()
 
-    # if USE_LLM and raw_query:
-    #     # search_query = modify_search_query(raw_query)
-    #     search_query = _get_modified_query(raw_query, token)
+    if USE_LLM and raw_query:
+        # search_query = modify_search_query(raw_query)
+        search_query = _get_modified_query(raw_query, token)
 
-    #     print(f"Original Query: {raw_query} | Modified for SVD: {search_query}")
-    # else:
-    search_query = raw_query
+        print(f"Original Query: {raw_query} | Modified for SVD: {search_query}")
+    else:
+        search_query = raw_query
 
     raw_results = svd_search(search_query, skill, top_k) or []
     summary = summarize_results(raw_results, search_query)
