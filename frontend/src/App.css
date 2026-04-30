@@ -1040,6 +1040,24 @@
   text-align: center;
 }
 
+.polaroid-card.back {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #f0b8c8 transparent;
+  padding-bottom: 4px;
+}
+
+.polaroid-card.back::-webkit-scrollbar {
+  width: 4px;
+}
+.polaroid-card.back::-webkit-scrollbar-track {
+  background: transparent;
+}
+.polaroid-card.back::-webkit-scrollbar-thumb {
+  background: #f0b8c8;
+  border-radius: 4px;
+}
+
 .dimension-polaroid-words {
   font-size: 12px;
   color: #7a4050;
