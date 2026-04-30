@@ -63,7 +63,6 @@ def json_search():
         search_query = raw_query
 
     raw_results = svd_search(search_query, skill, top_k) or []
-    summary = summarize_results(raw_results, search_query)
     pattern_ids = [item["pattern_obj"].id for item in raw_results]
 
     fresh_patterns = {p.id: p for p in Pattern.query.filter(Pattern.id.in_(pattern_ids)).all()}
@@ -83,7 +82,7 @@ def json_search():
         d["explanation"] = item.get("explanation", {})
         formatted_results.append(d)
 
-    return formatted_results, summary
+    return formatted_results
 
 
 def register_routes(app):
@@ -106,11 +105,31 @@ def register_routes(app):
 
     @app.route("/api/patterns")
     def patterns_search():
-        formatted_results, summary = json_search()
+        formatted_results = json_search()
+        raw_query = request.args.get("title", "")
+        token = _get_session_token()
+        modified_query = _get_modified_query(raw_query, token) if USE_LLM and raw_query else raw_query
         return jsonify({
             "results": formatted_results,
+            "modified_query": modified_query,
+        })
+
+    @app.route("/api/patterns/summarize", methods=["POST"])
+    def patterns_summarize():
+        """Called on-demand when the user clicks 'Show AI Summary'."""
+        data = request.get_json()
+        query = data.get("query", "")
+        pattern_titles = data.get("pattern_titles", [])
+
+        class _P:
+            def __init__(self, title): self.title = title
+        mock_results = [{"pattern_obj": _P(t), "score": 0} for t in pattern_titles]
+
+        summary = summarize_results(mock_results, query)
+        return jsonify({
             "summary": summary.get("summary", ""),
-            "best_match": summary.get("best_match", None)})
+            "best_match": summary.get("best_match", None),
+        })
 
     @app.route("/api/patterns/trending")
     def patterns_trending():
