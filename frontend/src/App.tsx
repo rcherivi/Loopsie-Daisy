@@ -40,6 +40,7 @@ function App(): JSX.Element {
   const [useLlm, setUseLlm] = useState<boolean | null>(null);
   const [inputValue, setInputValue] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [modifiedQuery, setModifiedQuery] = useState<string>("");
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [featuredPatterns, setFeaturedPatterns] = useState<Pattern[]>([]);
   const [skillFilter, setSkillFilter] = useState<string>("");
@@ -51,6 +52,7 @@ function App(): JSX.Element {
   const searchSectionRef = useRef<HTMLElement>(null);
   const [numCols, setNumCols] = useState(4);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const [chatResetKey, setChatResetKey] = useState(0);
 
   // add dimensions
   const [showDimensions, setShowDimensions] = useState(false);
@@ -84,67 +86,6 @@ function App(): JSX.Element {
       .catch(() => {});
   }, []);
 
-  // const applyResults = useCallback((data: Pattern[]) => {
-  //   setPatterns(data);
-  //   setResolved(true);
-  //   setShowLoading(false);
-  // }, []);
-
-  // const runFetch = useCallback(
-  //   async (text: string, skill: string, k: number) => {
-  //     fetchedDataRef.current = null;
-  //     loadingDoneRef.current = false;
-
-  //     const params = new URLSearchParams();
-  //     if (text.trim() !== "") params.append("title", text);
-  //     if (skill.trim() !== "") params.append("skill", skill);
-  //     params.append("top_k", String(k));
-
-  //     const res = await fetch(`/api/patterns?${params.toString()}`);
-  //     const data: Pattern[] = await res.json();
-
-  //     if (loadingDoneRef.current) {
-  //       applyResults(data);
-  //     } else {
-  //       fetchedDataRef.current = data;
-  //     }
-  //   },
-  //   [applyResults],
-  // );
-  // const runFetch = useCallback(
-  //   async (text: string, skill: string, k: number) => {
-  //     // setShowLoading(true);
-  //     const start = Date.now();
-
-  //     const params = new URLSearchParams();
-  //     if (text.trim() !== "") params.append("title", text);
-  //     if (skill.trim() !== "") params.append("skill", skill);
-  //     params.append("top_k", String(k));
-
-  //     try {
-  //       const res = await fetch(`/api/patterns?${params.toString()}`);
-  //       const data: Pattern[] = await res.json();
-
-  //       const elapsed = Date.now() - start;
-  //       const delay = Math.max(0, 800 - elapsed);
-  //       await new Promise((r) => setTimeout(r, delay));
-
-  //       setPatterns(data);
-  //       setResolved(true);
-  //     } catch (err) {
-  //       setPatterns([]);
-  //       setResolved(true);
-  //     } finally {
-  //       // setShowLoading(false);
-  //       setIsFadingOut(true);
-  //       setTimeout(() => {
-  //         setShowLoading(false);
-  //         setIsFadingOut(false);
-  //       }, 300);
-  //     }
-  //   },
-  //   [],
-  // );
   const runFetch = useCallback(
     async (text: string, skill: string, k: number) => {
       const start = Date.now();
@@ -167,11 +108,7 @@ function App(): JSX.Element {
 
         /*setPatterns(data);*/
         setPatterns(data.results ?? []);
-        setSummaryData(
-          data.summary
-            ? { summary: data.summary, best_match: data.best_match }
-            : null,
-        );
+        setModifiedQuery(data.modified_query ?? "");
         setResolved(true);
       } catch {
         setPatterns([]);
@@ -203,25 +140,31 @@ function App(): JSX.Element {
     }
   }, []);
 
-  // const handleLoadingDone = useCallback(() => {
-  //   loadingDoneRef.current = true;
-  //   if (fetchedDataRef.current !== null) {
-  //     applyResults(fetchedDataRef.current);
-  //     fetchedDataRef.current = null;
-  //   }
-  // }, [applyResults]);
+  const fetchSummary = useCallback(
+    async (query: string, matchedPatterns: Pattern[]) => {
+      if (!query.trim() || matchedPatterns.length === 0) return;
+      try {
+        const res = await fetch("/api/patterns/summarize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query,
+            pattern_titles: matchedPatterns.map((p) => p.title),
+          }),
+        });
+        const data = await res.json();
+        setSummaryData(
+          data.summary
+            ? { summary: data.summary, best_match: data.best_match }
+            : null,
+        );
+      } catch {
+        setSummaryData(null);
+      }
+    },
+    [],
+  );
 
-  // const submitSearch = useCallback(
-  //   (text: string, skill: string, k = topK) => {
-  //     if (text.trim() === "") return;
-  //     setSearchTerm(text);
-  //     setResolved(false);
-  //     setPatterns([]);
-  //     setShowLoading(true);
-  //     runFetch(text, skill, k);
-  //   },
-  //   [runFetch, topK],
-  // );
   const submitSearch = useCallback(
     (text: string, skill: string, k = topK) => {
       if (text.trim() === "") return;
@@ -231,16 +174,21 @@ function App(): JSX.Element {
       setPatterns([]);
       /* to allow showing and hiding the IR results summary*/
       setShowSummary(false);
+      setSummaryData(null);
       setShowDimensions(false);
       setIsFadingOut(false);
       setShowLoading(true);
+      setChatResetKey((k) => k + 1);
 
+      setTopDimensions([]);
       runFetch(text, skill, k);
-      // add fetch dimensions - Fiona
-      fetchDimensions(text);
     },
     [runFetch, topK],
   );
+
+  const handleModifiedQueryChange = useCallback((query: string) => {
+    setModifiedQuery(query);
+  }, []);
 
   const handleSkillChange = useCallback(
     (level: string) => {
@@ -276,6 +224,7 @@ function App(): JSX.Element {
     setInputValue("");
     setSearchTerm("");
     setPatterns([]);
+    setModifiedQuery("");
     /* clear the IR summary as well when clearing the search */
     setSummaryData(null);
     setResolved(false);
@@ -569,28 +518,41 @@ function App(): JSX.Element {
           )}
 
           {hasSearch && (
-            <p className="active-search-label">
-              Showing results for{" "}
-              <strong>
-                "{searchTerm}" · {}
-              </strong>
-              <strong>
-                {patterns.length}{" "}
-                {patterns.length === 1 ? "pattern" : "patterns"}
-              </strong>{" "}
-              found
-              <button
-                className="dimensions-toggle-btn"
-                onClick={() => setShowDimensions((prev) => !prev)}
-              >
-                <span
-                  className={`dimensions-triangle ${showDimensions ? "open" : ""}`}
+            <>
+              <p className="active-search-label">
+                Showing results for{" "}
+                <strong>
+                  "{searchTerm}" · {}
+                </strong>
+                <strong>
+                  {patterns.length}{" "}
+                  {patterns.length === 1 ? "pattern" : "patterns"}
+                </strong>{" "}
+                found
+                <button
+                  className="dimensions-toggle-btn"
+                  onClick={() => {
+                    if (!showDimensions && topDimensions.length === 0) {
+                      fetchDimensions(searchTerm);
+                    }
+                    setShowDimensions((prev) => !prev);
+                  }}
                 >
-                  ▶
-                </span>
-                {showDimensions ? "Hide Insights" : "Show Insights"}
-              </button>
-            </p>
+                  <span
+                    className={`dimensions-triangle ${showDimensions ? "open" : ""}`}
+                  >
+                    ▶
+                  </span>
+                  {showDimensions ? "Hide Insights" : "Show Insights"}
+                </button>
+              </p>
+              {modifiedQuery && modifiedQuery !== searchTerm && (
+                <p className="active-search-label">
+                  🤖 AI refined your search to:{" "}
+                  <strong>"{modifiedQuery}"</strong>
+                </p>
+              )}
+            </>
           )}
         </section>
 
@@ -609,11 +571,16 @@ function App(): JSX.Element {
         )}
 
         {/* IR result summary banner */}
-        {hasSearch && summaryData && (
+        {hasSearch && resolved && (
           <div className="summary-banner-container">
             <button
               className="summary-toggle-btn"
-              onClick={() => setShowSummary((prev) => !prev)}
+              onClick={() => {
+                if (!showSummary && !summaryData) {
+                  fetchSummary(searchTerm, patterns);
+                }
+                setShowSummary((prev) => !prev);
+              }}
             >
               {showSummary ? "✨ Hide AI Summary" : "✨ Show AI Summary"}
               <span
@@ -622,11 +589,14 @@ function App(): JSX.Element {
                 ▶
               </span>
             </button>
-            {showSummary && (
+            {showSummary && summaryData && (
               <SearchSummaryBanner
                 summary={summaryData.summary}
                 best_match={summaryData.best_match}
               />
+            )}
+            {showSummary && !summaryData && (
+              <p className="summary-loading">Generating summary…</p>
             )}
           </div>
         )}
@@ -720,6 +690,7 @@ function App(): JSX.Element {
       {/* LLM Search  */}
       {useLlm && (
         <Chat
+          key={chatResetKey}
           onSearchTerm={handleChatSearch}
           summaryData={summaryData}
           patterns={patterns.map((p) => ({
