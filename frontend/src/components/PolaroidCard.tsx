@@ -58,13 +58,14 @@ type Props = {
   pattern: Pattern;
   index: number;
   onVote?: (id: number, vote: "up" | "down") => void;
-  dimensions?: string[];
+  topDimensionIds?: number[];
   isAiRecommended?: boolean;
 };
 
 export default function PolaroidCard({
   pattern,
   onVote,
+  topDimensionIds = [],
   isAiRecommended,
 }: Props) {
   const userVote = pattern.user_vote ?? null;
@@ -195,7 +196,15 @@ export default function PolaroidCard({
                 <div className="dimension-words-container">
                   {exp.shared_dimensions.map((d) => (
                     <div className="dimension-polaroid-words" key={d.dim}>
-                      <strong className="dimension-bold">Dim {d.dim}</strong>
+                      <strong
+                        className={`dimension-bold ${
+                          topDimensionIds.includes(d.dim)
+                            ? "dimension-highlight"
+                            : ""
+                        }`}
+                      >
+                        Dim {d.dim}
+                      </strong>
                       <span>{d.words.join(", ")}</span>
                     </div>
                   ))}

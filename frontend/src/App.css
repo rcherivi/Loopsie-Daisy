@@ -1052,6 +1052,12 @@
   min-width: 70px;
 }
 
+.dimension-highlight {
+  color: #d4607a;
+  text-decoration-thickness: 2px;
+  text-shadow: 0 0 10px #e8ce48, 0 0 20px #e8ce48;
+}
+
 .flip-back-btn {
   margin-top: 10px;
   font-size: 11px;

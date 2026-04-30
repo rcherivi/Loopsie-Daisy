@@ -711,6 +711,9 @@ function App(): JSX.Element {
                       pattern={pattern}
                       index={i}
                       onVote={handleVote}
+                      topDimensionIds={topDimensions.map(
+                        (d: any) => d.dimension,
+                      )}
                     />
                   </div>
                 ))}
@@ -765,6 +768,9 @@ function App(): JSX.Element {
                       index={ci + row * numCols}
                       onVote={handleVote}
                       isAiRecommended={aiPatternIds.has(pattern.id)}
+                      topDimensionIds={topDimensions.map(
+                        (d: any) => d.dimension,
+                      )}
                     />
                   ))}
                 </div>
