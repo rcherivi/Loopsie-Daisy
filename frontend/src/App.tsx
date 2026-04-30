@@ -646,6 +646,7 @@ function App(): JSX.Element {
                       index={i}
                       onVote={handleVote}
                       topDimensionIds={topDimensions.map((d: any) => d.dimension)}
+                      isSearchResult={false}
                     />
                   </div>
                 ))}
@@ -700,6 +701,7 @@ function App(): JSX.Element {
                       index={ci + row * numCols}
                       onVote={handleVote}
                       topDimensionIds={topDimensions.map((d: any) => d.dimension)}
+                      isSearchResult={true}
                     />
                   ))}
                 </div>

@@ -59,9 +59,10 @@ type Props = {
   index: number;
   onVote?: (id: number, vote: "up" | "down") => void;
   topDimensionIds?: number[];
+  isSearchResult?: boolean;
 };
 
-export default function PolaroidCard({ pattern, onVote, topDimensionIds = [] }: Props) {
+export default function PolaroidCard({ pattern, onVote, topDimensionIds = [], isSearchResult = false }: Props) {
   const userVote = pattern.user_vote ?? null;
   const { tilt, pin } = useMemo(() => cardStyle(pattern), [pattern]);
   const [flipped, setFlipped] = useState(false);
@@ -72,20 +73,24 @@ export default function PolaroidCard({ pattern, onVote, topDimensionIds = [] }: 
       <Pin colorClass={pin} />
 
       <div className={`polaroid-flip ${flipped ? "flipped" : ""}`}>
+
         {/* front side of polaroid card */}
         <div className="polaroid-card front">
+
           {/* button to flip to other side */}
-          <button
-            className="flip-btn"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setFlipped((prev) => !prev);
-            }}
-            aria-label="Show explanation"
-          >
-            ?
-          </button>
+          {isSearchResult && (
+            <button
+              className="flip-btn"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setFlipped((prev) => !prev);
+              }}
+              aria-label="Show explanation"
+            >
+              ?
+            </button>
+          )}
 
           <div className="polaroid-img-wrap">
             <img
@@ -186,9 +191,8 @@ export default function PolaroidCard({ pattern, onVote, topDimensionIds = [] }: 
                   {exp.shared_dimensions.map((d) => (
                     <div className="dimension-polaroid-words" key={d.dim}>
                       <strong
-                        className={`dimension-bold ${
-                          topDimensionIds.includes(d.dim) ? "dimension-highlight" : ""
-                        }`}
+                        className={`dimension-bold ${topDimensionIds.includes(d.dim) ? "dimension-highlight" : ""
+                          }`}
                       >
                         Dim {d.dim}
                       </strong>
