@@ -352,7 +352,7 @@ def get_top_dimensions(query_lsa, top_n=3, top_words=5):
     return dimensions
 
 
-def get_shared_dimensions(pattern_idx, query_lsa, top_n=2, top_k_words=5):
+def get_shared_dimensions(pattern_idx, query_lsa, top_n=3, top_k_words=5):
     global lsa_matrix, dimension_top_words
 
     pattern_vec = lsa_matrix[pattern_idx]

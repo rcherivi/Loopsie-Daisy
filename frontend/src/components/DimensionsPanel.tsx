@@ -19,8 +19,9 @@ export default function DimensionsPanel({
 
       {data.slice(0, 3).map((d) => (
         <div key={d.dimension} className="dimension-row">
-          <div className="dimension-score">
-            + {d.score.toFixed(3)}
+
+          <div className="dimension-number">
+            Dim {d.dimension}
           </div>
 
           <div className="dimension-content">
@@ -29,6 +30,10 @@ export default function DimensionsPanel({
                 <span key={j} className="dimension-word">{w}</span>
               ))}
             </div>
+          </div>
+
+          <div className="dimension-score">
+              + {d.score.toFixed(3)}
           </div>
         </div>
       ))}

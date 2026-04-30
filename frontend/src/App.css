@@ -468,11 +468,19 @@
   margin-bottom: 10px;
 }
 
+.dimension-number {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7a4050;
+  padding: 4px 4px;
+}
+
 .dimension-score {
   font-size: 12px;
   font-weight: 600;
   color: #7a4050;
   padding: 4px 4px;
+  margin-right: 0;
 }
 
 .dimension-content {
@@ -1013,6 +1021,7 @@
   line-height: 1.2;
   padding-bottom: 5px;
   padding-bottom: 10px;
+  padding-top: 10px;
 }
 
 /* latent dimensions */
