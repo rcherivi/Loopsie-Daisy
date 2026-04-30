@@ -59,6 +59,7 @@ type Props = {
   index: number;
   onVote?: (id: number, vote: "up" | "down") => void;
   topDimensionIds?: number[];
+  isSearchResult?: boolean;
   isAiRecommended?: boolean;
 };
 
@@ -66,6 +67,7 @@ export default function PolaroidCard({
   pattern,
   onVote,
   topDimensionIds = [],
+  isSearchResult = false,
   isAiRecommended,
 }: Props) {
   const userVote = pattern.user_vote ?? null;
@@ -86,17 +88,19 @@ export default function PolaroidCard({
         {/* front side of polaroid card */}
         <div className="polaroid-card front">
           {/* button to flip to other side */}
-          <button
-            className="flip-btn"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setFlipped((prev) => !prev);
-            }}
-            aria-label="Show explanation"
-          >
-            ?
-          </button>
+          {isSearchResult && (
+            <button
+              className="flip-btn"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setFlipped((prev) => !prev);
+              }}
+              aria-label="Show explanation"
+            >
+              ?
+            </button>
+          )}
 
           <div className="polaroid-img-wrap">
             <img

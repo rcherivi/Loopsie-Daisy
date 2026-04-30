@@ -714,6 +714,7 @@ function App(): JSX.Element {
                       topDimensionIds={topDimensions.map(
                         (d: any) => d.dimension,
                       )}
+                      isSearchResult={false}
                     />
                   </div>
                 ))}
@@ -771,6 +772,7 @@ function App(): JSX.Element {
                       topDimensionIds={topDimensions.map(
                         (d: any) => d.dimension,
                       )}
+                      isSearchResult={true}
                     />
                   ))}
                 </div>
