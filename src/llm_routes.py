@@ -56,15 +56,14 @@ def modify_search_query(user_query: str) -> str:
     "Your job: rewrite the user's query as a concise list of keywords that will best match "
     "pattern titles and descriptions in the database.\n\n"
     "Rules:\n"
-    "- Output ONLY a comma-separated list of keywords, no other text\n"
     "- Keep the core item type (e.g. 'sweater', 'hat', 'blanket') — never drop it\n"
     "- Add 2-4 relevant synonyms or style descriptors (e.g. 'cozy' → 'chunky warm oversized')\n"
     "- Remove filler words: free, easy, beginner, download, pdf, pattern, crochet, knit\n"
     "- Do NOT invent materials or colors not implied by the query\n"
-    "- Max 10 keywords total\n\n"
+    "- Max 20 keywords total\n\n"
     "Example:\n"
     "User: cute boho summer top\n"
-    "Output: top, crop, bohemian, breezy, lace, festival, sleeveless, open-back"
+    "Output: open-back breezy lacey top for the beach in the summer for warm temperatures"
 )},
 # {"role": "user", "content": user_query},
         {"role": "user", "content": user_query},
@@ -123,6 +122,7 @@ def summarize_results(results, modified_query):
     try:
         response = client.chat(prompt, stream=False, show_thinking=False)
         content = response.get("content", "").strip()
+        print (content)
 
         best_match = None
         for line in content.split("\n"):
@@ -132,6 +132,7 @@ def summarize_results(results, modified_query):
                     "name": parts[0].strip() if len(parts) > 0 else "",
                     "link": parts[1].strip() if len(parts) > 1 else None,
                 }
+                print(f"Best match found: {best_match['name']} - {best_match['link']}")
                 break
 
         return {"summary": content, "best_match": best_match}
