@@ -204,9 +204,9 @@ function App(): JSX.Element {
     [runFetch, topK],
   );
 
-  const handleModifiedQueryChange = useCallback((query: string) => {
-    setModifiedQuery(query);
-  }, []);
+  // const handleModifiedQueryChange = useCallback((query: string) => {
+  //   setModifiedQuery(query);
+  // }, []);
 
   const handleSkillChange = useCallback(
     (level: string) => {
@@ -289,7 +289,8 @@ function App(): JSX.Element {
 
         // 1. Exact match
         const exact = titleToPattern.get(key);
-        if (exact && !usedIds.has(exact.id)) {
+        // if (exact && !usedIds.has(exact.id)) {
+        if (exact && exact.id != null && !usedIds.has(exact.id)) {
           matched.push(exact);
           usedIds.add(exact.id);
           continue;
@@ -300,7 +301,8 @@ function App(): JSX.Element {
         let bestScore = 0;
         let bestPattern: Pattern | null = null;
         for (const p of current) {
-          if (usedIds.has(p.id)) continue;
+          // if (usedIds.has(p.id)) continue;
+          if (p.id == null || usedIds.has(p.id)) continue;
           const pTokens = tokenise(p.title);
           const overlap = pTokens.filter((t) => llmTokens.has(t)).length;
           const union = new Set([...llmTokens, ...pTokens]).size;
@@ -311,7 +313,8 @@ function App(): JSX.Element {
           }
         }
         // Accept if ≥ 40% token overlap
-        if (bestScore >= 0.4 && bestPattern) {
+        // if (bestScore >= 0.4 && bestPattern) {
+        if (bestScore >= 0.4 && bestPattern && bestPattern.id != null) {
           matched.push(bestPattern);
           usedIds.add(bestPattern.id);
         }
