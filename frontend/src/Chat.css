@@ -1,37 +1,99 @@
 /* ============================================================
-   CHAT — inline panel, rendered below the AI summary banner
+   CHAT — floating modal, bottom-right corner
    Matches app palette: #d4607a primary, #5a2a36 text, Nunito
    All class names unchanged from original Chat.tsx
    ============================================================ */
 
+/* ---------- Floating toggle button ---------- */
+/* Wraps the entire chat panel so we can show/hide it.
+   Add `chat-modal-open` class to #chat-root to expand. */
+
 #chat-root {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
   font-family: "Nunito", sans-serif;
-  width: 100%;
-  margin-top: 12px;
 }
 
-/* ---------- Inline panel (replaces floating modal) ---------- */
+/* The FAB trigger — add this button in App.tsx above <Chat /> */
+.chat-fab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 20px 13px 16px;
+  border-radius: 50px;
+  border: 1.5px solid #fff5c0;
+  background: linear-gradient(135deg, #748d3e 0%, #d4607a 100%);
+  color: #fff;
+  font-family: "Nunito", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  box-shadow:
+    0 4px 16px rgba(212, 96, 122, 0.38),
+    0 1px 4px rgba(0, 0, 0, 0.08);
+  transition:
+    background 0.18s,
+    box-shadow 0.18s,
+    transform 0.15s;
+  white-space: nowrap;
+}
 
-.chat-panel-inline {
-  width: 100%;
+.chat-fab:hover {
+  color: #fff;
+  background: linear-gradient(135deg, #5c781f 0%, #9f354c 100%);
+  box-shadow:
+    0 6px 22px rgba(212, 96, 122, 0.45),
+    0 10px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.chat-fab:active {
+  transform: translateY(0);
+}
+
+/* ---------- Modal panel ---------- */
+
+.chat-panel {
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  height: 520px;
+  max-height: calc(100vh - 100px);
   display: flex;
   flex-direction: column;
   background: #fff;
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow:
-    0 4px 20px rgba(90, 42, 54, 0.1),
-    0 1px 6px rgba(0, 0, 0, 0.05);
+    0 20px 60px rgba(90, 42, 54, 0.18),
+    0 4px 16px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  border: 1.5px solid #f0d0d8;
+  animation: chatPanelIn 0.22s cubic-bezier(0.34, 1.36, 0.64, 1);
 }
 
-/* ---------- Header ---------- */
+@keyframes chatPanelIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ---------- Header (add .chat-header div in Chat.tsx) ---------- */
 
 .chat-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px 11px 18px;
+  padding: 14px 14px 13px 18px;
   background: linear-gradient(135deg, #a0c360 0%, #d4607a 100%);
   flex-shrink: 0;
 }
@@ -42,27 +104,51 @@
 }
 
 .chat-header-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   color: #fff;
   line-height: 1.2;
 }
 
 .chat-header-sub {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.78);
   margin-top: 1px;
 }
 
+.chat-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  transition:
+    background 0.18s,
+    transform 0.15s;
+  flex-shrink: 0;
+}
+
+.chat-close:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
 /* ---------- Messages ---------- */
 
 #messages {
+  /* reset: was full-width centered layout, now fills the panel */
   width: 100%;
   max-width: 100%;
   margin: 0;
   padding: 14px 14px 8px;
-  max-height: 340px;
+  flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -81,19 +167,9 @@
   border-radius: 4px;
 }
 
-.chat-empty-hint {
-  font-family: "Nunito", sans-serif;
-  font-size: 13px;
-  color: #b07080;
-  font-style: italic;
-  text-align: center;
-  padding: 12px 8px;
-  margin: 0;
-}
-
 .message {
   display: flex;
-  margin-bottom: 0;
+  margin-bottom: 0; /* gap handles spacing now */
 }
 
 .message.user {
@@ -104,7 +180,7 @@
   justify-content: flex-start;
 }
 
-/* Bubble wrapper — wraps the <p> tag */
+/* Bubble wrapper — wraps the <p> tag from Chat.tsx */
 .message p {
   margin: 0;
   padding: 10px 14px;
@@ -139,6 +215,7 @@
   align-items: center;
   gap: 5px;
   padding: 10px 14px;
+  /* match assistant bubble */
   background: #fff1f4;
   border: 1px solid #f0d8df;
   border-radius: 16px;
@@ -183,12 +260,14 @@
 .chat-bar {
   flex-shrink: 0;
   padding: 10px 12px 14px;
+  /* remove old width/max-width centering */
   width: 100%;
 }
 
 .chat-bar .input-row {
   display: flex;
   align-items: center;
+  /* full width within the panel */
   max-width: 100%;
   margin: 0;
   border-radius: 50px;
@@ -292,30 +371,200 @@
 /* ---------- Mobile ---------- */
 
 @media (max-width: 480px) {
-  .chat-panel-inline {
-    border-radius: 12px;
+  #chat-root {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    align-items: stretch;
   }
 
-  #messages {
-    max-height: 260px;
+  .chat-fab {
+    margin: 0 16px 16px auto;
+  }
+
+  .chat-panel {
+    width: 100%;
+    max-width: 100%;
+    height: 72vh;
+    border-radius: 20px 20px 0 0;
   }
 }
 
-.ai-recommended-badge {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 10;
-  background: linear-gradient(135deg, #a0c360 0%, #d4607a 100%);
-  color: #fff;
+/* llm mode */
+
+/* .llm-mode .patterns-board {
+  max-height: 500px;
+  overflow-y: auto;
+} */
+
+/* chat */
+
+/* #messages {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 24px 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.message {
+  margin-bottom: 1em;
+}
+
+.message p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
   font-family: "Nunito", sans-serif;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
-  padding: 3px 8px;
-  border-radius: 20px;
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(212, 96, 122, 0.35);
-  pointer-events: none;
-  user-select: none;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #5a2a36;
 }
+
+.message.user p {
+  font-weight: 700;
+  color: #d4607a;
+} */
+
+/* loading dots */
+
+/* .loading-indicator {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 1em;
+  padding: 0 24px;
+}
+
+.loading-indicator.visible {
+  display: flex;
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d4607a;
+  animation: chatBounce 0.6s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.loading-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.loading-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes chatBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+} */
+
+/* chat input bar */
+
+/* .chat-bar {
+  width: 100%;
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border-top: 0.5px solid #f0d0d8;
+  background: #fff1f4;
+}
+
+.chat-bar .input-row {
+  display: flex;
+  align-items: center;
+  max-width: 640px;
+  margin: 0 auto;
+  border-radius: 50px;
+  border: 1.5px solid #f0b8c8;
+  padding: 10px 10px 10px 18px;
+  gap: 8px;
+  background: #fff;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.chat-bar .input-row:focus-within {
+  border-color: #d4607a;
+  box-shadow: 0 2px 10px rgba(212, 96, 122, 0.14);
+}
+
+.chat-bar .input-row input {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  border: none;
+  outline: none;
+  font-family: "Nunito", sans-serif;
+  color: #5a2a36;
+  background: transparent;
+}
+
+.chat-bar .input-row input::placeholder {
+  color: #c09098;
+}
+
+.chat-bar .input-row button {
+  flex-shrink: 0;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 50px;
+  border: none;
+  background: #d4607a;
+  color: #fff;
+  cursor: pointer;
+  font-family: "Nunito", sans-serif;
+  transition: background 0.15s;
+  letter-spacing: 0.3px;
+}
+
+.chat-bar .input-row button:hover:not(:disabled) {
+  background: #b84060;
+}
+.chat-bar .input-row button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.thinking-block {
+  margin-bottom: 0.5rem;
+}
+
+.thinking-toggle {
+  background: none;
+  border: 1px solid #d4a8b0;
+  border-radius: 12px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.78rem;
+  color: #a0606e;
+  cursor: pointer;
+  margin-bottom: 0.4rem;
+  max-height: 33vh;
+  overflow-y: auto;
+}
+
+.thinking-toggle:hover {
+  background: #f7c9d4;
+}
+
+.thinking-text {
+  font-size: 0.82rem;
+  color: #888;
+  font-style: italic;
+  background: #fdf5f7;
+  border-left: 3px solid #f7c9d4;
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  white-space: pre-wrap;
+} */
