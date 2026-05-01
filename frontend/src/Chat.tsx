@@ -115,6 +115,7 @@ function Chat({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -305,84 +306,95 @@ function Chat({
 
   return (
     <div id="chat-root">
-      <div className="chat-panel-inline">
-        <div className="chat-header">
-          <div className="chat-header-info">
-            <span className="chat-header-title">✨ Ask a Follow-up</span>
-            <span className="chat-header-sub">
-              Refine results with a follow-up question
-            </span>
+      {/* Floating action button — always visible */}
+      <button className="chat-fab" onClick={() => setIsOpen((o) => !o)}>
+        <span>✨</span>
+        {isOpen ? "Close Chat" : "Ask AI"}
+      </button>
+
+      {/* Modal panel — shown when open */}
+      {isOpen && (
+        <div className="chat-panel">
+          <div className="chat-header">
+            <div className="chat-header-info">
+              <span className="chat-header-title">✨ Ask a Follow-up</span>
+              <span className="chat-header-sub">
+                Refine results with a follow-up question
+              </span>
+            </div>
+          </div>
+
+          <div id="messages">
+            {messages.length === 0 && (
+              <p className="chat-empty-hint">
+                Ask me to narrow down the results — e.g. "show me only
+                beginner-friendly ones" or "which ones use chunky yarn?"
+              </p>
+            )}
+            {messages.map((msg, i) => (
+              <div
+                key={i}
+                className={`message ${msg.isUser ? "user" : "assistant"}`}
+              >
+                {/* thinking block */}
+                {!msg.isUser && msg.thinking && (
+                  <div className="thinking-block">
+                    <button
+                      className="thinking-toggle"
+                      onClick={() =>
+                        setMessages((prev) =>
+                          prev.map((m, j) =>
+                            j === i
+                              ? { ...m, showThinking: !m.showThinking }
+                              : m,
+                          ),
+                        )
+                      }
+                    >
+                      {msg.showThinking ? "▲ Hide thinking" : "▼ Show thinking"}
+                    </button>
+                    {msg.showThinking && (
+                      <p className="thinking-text">{msg.thinking}</p>
+                    )}
+                  </div>
+                )}
+                <p>{msg.text}</p>
+              </div>
+            ))}
+            {loading && (
+              <div className="loading-indicator visible">
+                <span className="loading-dot" />
+                <span className="loading-dot" />
+                <span className="loading-dot" />
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+
+          <div className="chat-bar">
+            <form className="input-row" onSubmit={sendMessage}>
+              <img
+                src={SearchIcon}
+                alt=""
+                width={20}
+                height={20}
+                style={{ flexShrink: 0 }}
+              />
+              <input
+                type="text"
+                placeholder="Ask about these patterns..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={loading}
+                autoComplete="off"
+              />
+              <button type="submit" disabled={loading}>
+                ➤
+              </button>
+            </form>
           </div>
         </div>
-
-        <div id="messages">
-          {messages.length === 0 && (
-            <p className="chat-empty-hint">
-              Ask me to narrow down the results — e.g. "show me only
-              beginner-friendly ones" or "which ones use chunky yarn?"
-            </p>
-          )}
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`message ${msg.isUser ? "user" : "assistant"}`}
-            >
-              {/* thinking block */}
-              {!msg.isUser && msg.thinking && (
-                <div className="thinking-block">
-                  <button
-                    className="thinking-toggle"
-                    onClick={() =>
-                      setMessages((prev) =>
-                        prev.map((m, j) =>
-                          j === i ? { ...m, showThinking: !m.showThinking } : m,
-                        ),
-                      )
-                    }
-                  >
-                    {msg.showThinking ? "▲ Hide thinking" : "▼ Show thinking"}
-                  </button>
-                  {msg.showThinking && (
-                    <p className="thinking-text">{msg.thinking}</p>
-                  )}
-                </div>
-              )}
-              <p>{msg.text}</p>
-            </div>
-          ))}
-          {loading && (
-            <div className="loading-indicator visible">
-              <span className="loading-dot" />
-              <span className="loading-dot" />
-              <span className="loading-dot" />
-            </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-
-        <div className="chat-bar">
-          <form className="input-row" onSubmit={sendMessage}>
-            <img
-              src={SearchIcon}
-              alt=""
-              width={20}
-              height={20}
-              style={{ flexShrink: 0 }}
-            />
-            <input
-              type="text"
-              placeholder="Ask about these patterns..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={loading}
-              autoComplete="off"
-            />
-            <button type="submit" disabled={loading}>
-              ➤
-            </button>
-          </form>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

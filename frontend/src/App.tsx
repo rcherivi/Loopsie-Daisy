@@ -238,6 +238,7 @@ function App(): JSX.Element {
     /* clear the IR summary as well when clearing the search */
     setSummaryData(null);
     setResolved(false);
+    setChatResetKey((k) => k + 1);
     // fetchedDataRef.current = null;
     setTimeout(() => inputRef.current?.focus(), 0);
   }, []);
@@ -681,21 +682,6 @@ function App(): JSX.Element {
           </div>
         )}
 
-        {hasSearch && resolved && useLlm && (
-          <Chat
-            key={chatResetKey}
-            onSearchTerm={handleChatSearch}
-            onAiPatterns={handleAiPatterns}
-            summaryData={summaryData}
-            patterns={patterns.map((p) => ({
-              title: p.title,
-              description: p.description,
-              skill_level: p.skill_level,
-              pattern_link: p.pattern_link,
-            }))}
-          />
-        )}
-
         {/* trending strip — always visible when no active search */}
         {!hasSearch && (
           <div className="featured-section">
@@ -770,6 +756,22 @@ function App(): JSX.Element {
               ));
             })()}
         </div>
+
+        {/* Floating AI chat — always visible in bottom-right when LLM is on */}
+        {useLlm && hasSearch && (
+          <Chat
+            key={chatResetKey}
+            onSearchTerm={handleChatSearch}
+            onAiPatterns={handleAiPatterns}
+            summaryData={summaryData}
+            patterns={patterns.map((p) => ({
+              title: p.title,
+              description: p.description,
+              skill_level: p.skill_level,
+              pattern_link: p.pattern_link,
+            }))}
+          />
+        )}
 
         <footer className="app-footer">
           <span className="app-footer-logo">Loopsie Daisy</span>

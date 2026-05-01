@@ -257,7 +257,7 @@ def svd_search(query, skill_filter="", top_k=10):
     # Filter to top 80th percentile; also enforce a minimum threshold
     # to prevent returning irrelevant results when scores are generally low
     threshold = np.percentile(final_scores, 80)
-    keep_mask     = (final_scores > threshold) & (final_scores > 0.05)
+    keep_mask     = (final_scores > threshold) & (final_scores > 0.15)
     kept_indices  = indices[keep_mask]
     kept_scores   = final_scores[keep_mask]
     kept_lsa      = lsa_scores_filtered[keep_mask]

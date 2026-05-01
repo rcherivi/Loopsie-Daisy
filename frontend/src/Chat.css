@@ -568,3 +568,17 @@
   border-radius: 6px;
   white-space: pre-wrap;
 } */
+/* ---------- Empty state hint ---------- */
+
+.chat-empty-hint {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-family: "Nunito", sans-serif;
+  color: #a0606e;
+  font-style: italic;
+  line-height: 1.5;
+  background: #fff8f9;
+  border-radius: 12px;
+  border: 1px dashed #f0b8c8;
+}
