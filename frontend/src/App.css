@@ -669,10 +669,10 @@
   border: 1px solid #8ab848;
 }
 
-.ai-badge {
+.ai-recommended-badge {
   position: absolute;
   top: 8px;
-  right: 36px;
+  right: 15px;
   background: linear-gradient(135deg, #d4607a 0%, #a0606e 100%);
   color: #fff;
   font-size: 0.58rem;
