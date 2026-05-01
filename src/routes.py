@@ -55,9 +55,7 @@ def json_search():
     token = _get_session_token()
 
     if USE_LLM and raw_query:
-        # search_query = modify_search_query(raw_query)
         search_query = _get_modified_query(raw_query, token)
-
         print(f"Original Query: {raw_query} | Modified for SVD: {search_query}")
     else:
         search_query = raw_query
@@ -68,9 +66,6 @@ def json_search():
     fresh_patterns = {p.id: p for p in Pattern.query.filter(Pattern.id.in_(pattern_ids)).all()}
     user_votes = _user_votes_for_patterns(pattern_ids, token)
 
-    # BUG FIX: iterate over raw_results directly so `item` is in scope when
-    # accessing item["explanation"]. The previous loop iterated over pattern_ids
-    # and lost the reference to the corresponding raw_results entry.
     formatted_results = []
     for item in raw_results:
         pid = item["pattern_obj"].id
@@ -83,6 +78,29 @@ def json_search():
         formatted_results.append(d)
 
     return formatted_results
+
+
+def _extract_recommended_pattern_titles(text: str, known_titles: list[str]) -> list[str]:
+    """
+    Given the full LLM reply text and the list of known pattern titles,
+    return the subset of titles the LLM explicitly mentioned (case-insensitive).
+    Falls back to heuristic line-extraction if no known title is found.
+    """
+    lower_text = text.lower()
+    matched = [t for t in known_titles if t.lower() in lower_text]
+    if matched:
+        return matched
+
+    # Heuristic: extract "1. Title", "- Title", "* Title" lines
+    import re
+    titles = []
+    for line in text.splitlines():
+        m = re.match(r"^\s*(?:\d+\.|[-*•])\s+(.+)", line)
+        if m:
+            candidate = m.group(1).strip().split("—")[0].split(" - ")[0].strip()
+            if 3 < len(candidate) < 120:
+                titles.append(candidate)
+    return titles
 
 
 def register_routes(app):
@@ -226,8 +244,6 @@ def register_routes(app):
             "user_vote": vote_type,
         })
 
-    # BUG FIX: send_from_directory requires two arguments — directory and filename.
-    # The original call only passed filename, which would raise a TypeError at runtime.
     @app.route('/images/<path:filename>')
     def get_image(filename):
         images_dir = os.path.join(app.static_folder, 'images')
@@ -235,7 +251,17 @@ def register_routes(app):
 
     if USE_LLM:
         from llm_routes import register_chat_route
-        register_chat_route(app, json_search)
+
+        # Wrap register_chat_route so we can inject the recommended_patterns SSE
+        # event after the stream completes, based on known pattern titles.
+        def _json_search_with_recs():
+            """
+            Run the standard search and return results *plus* all known titles
+            so the chat route can match them against the LLM reply.
+            """
+            return json_search()
+
+        register_chat_route(app, _json_search_with_recs)
 
     # top dimensions of each search query
     @app.route("/api/query-dimensions")

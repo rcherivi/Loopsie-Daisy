@@ -438,7 +438,6 @@
   border-bottom: 2px solid #3a5a10;
 }
 
-
 /* dimensions panel */
 
 .dimension-container {
@@ -544,8 +543,6 @@
   margin: 0;
   color: #a0606e;
 }
-
-
 
 /* scattered polaroid layout */
 
@@ -664,7 +661,7 @@
   font-size: 16px;
   font-family: "Nunito", sans-serif;
 
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .flip-btn:hover {
@@ -672,6 +669,24 @@
   border: 1px solid #8ab848;
 }
 
+.ai-badge {
+  position: absolute;
+  top: 8px;
+  right: 36px;
+  background: linear-gradient(135deg, #d4607a 0%, #a0606e 100%);
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(160, 96, 110, 0.35);
+  pointer-events: none;
+  z-index: 2;
+  font-family: "Nunito", sans-serif;
+}
 
 /* push pins */
 
@@ -834,16 +849,8 @@
   padding-bottom: 4px;
 
   /* add fading effect at bottom */
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    black 70%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    black 70%,
-    transparent 100%
-  );
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
 }
 
 .polaroid-card-desc::-webkit-scrollbar {
@@ -923,7 +930,9 @@
   color: #fff;
   border-color: #d4607a;
   background: #b84060;
-  box-shadow: 0 6px 22px rgba(212, 96, 122, 0.45), 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 6px 22px rgba(212, 96, 122, 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* vote buttons */

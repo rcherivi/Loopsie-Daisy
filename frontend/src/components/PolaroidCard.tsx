@@ -60,9 +60,16 @@ type Props = {
   onVote?: (id: number, vote: "up" | "down") => void;
   topDimensionIds?: number[];
   isSearchResult?: boolean;
+  isAiRecommended?: boolean;
 };
 
-export default function PolaroidCard({ pattern, onVote, topDimensionIds = [], isSearchResult = false }: Props) {
+export default function PolaroidCard({
+  pattern,
+  onVote,
+  topDimensionIds = [],
+  isSearchResult = false,
+  isAiRecommended,
+}: Props) {
   const userVote = pattern.user_vote ?? null;
   const { tilt, pin } = useMemo(() => cardStyle(pattern), [pattern]);
   const [flipped, setFlipped] = useState(false);
@@ -72,11 +79,14 @@ export default function PolaroidCard({ pattern, onVote, topDimensionIds = [], is
     <div className={`polaroid-wrapper ${tilt}`}>
       <Pin colorClass={pin} />
 
-      <div className={`polaroid-flip ${flipped ? "flipped" : ""}`}>
+      {/* AI recommended badge */}
+      {isAiRecommended && (
+        <span className="ai-recommended-badge">✨ AI Pick</span>
+      )}
 
+      <div className={`polaroid-flip ${flipped ? "flipped" : ""}`}>
         {/* front side of polaroid card */}
         <div className="polaroid-card front">
-
           {/* button to flip to other side */}
           {isSearchResult && (
             <button
@@ -191,8 +201,11 @@ export default function PolaroidCard({ pattern, onVote, topDimensionIds = [], is
                   {exp.shared_dimensions.map((d) => (
                     <div className="dimension-polaroid-words" key={d.dim}>
                       <strong
-                        className={`dimension-bold ${topDimensionIds.includes(d.dim) ? "dimension-highlight" : ""
-                          }`}
+                        className={`dimension-bold ${
+                          topDimensionIds.includes(d.dim)
+                            ? "dimension-highlight"
+                            : ""
+                        }`}
                       >
                         Dim {d.dim}
                       </strong>
@@ -218,20 +231,6 @@ export default function PolaroidCard({ pattern, onVote, topDimensionIds = [], is
             )}
 
             <div className="polaroid-dimension-back">
-              {/* {dimensions && dimensions.length > 0 ? (
-                <div className="polaroid-dimension-words-container">
-                  {dimensions.map((w, i) => (
-                    <span key={i} className="polaroid-dimension-word">
-                      {w}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="polaroid-dimension-empty">
-                  No insights available.
-                </p>
-              )} */}
-
               <button
                 className="flip-back-btn"
                 onClick={() => setFlipped(false)}

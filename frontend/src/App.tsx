@@ -54,6 +54,11 @@ function App(): JSX.Element {
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [chatResetKey, setChatResetKey] = useState(0);
 
+  // --- AI-recommended patterns from chat follow-up questions ---
+  const [aiPatterns, setAiPatterns] = useState<Pattern[]>([]);
+  // Keep a ref to the latest patterns so handleAiPatterns never sees a stale closure
+  const patternsRef = useRef<Pattern[]>([]);
+
   // add dimensions
   const [showDimensions, setShowDimensions] = useState(false);
   const [topDimensions, setTopDimensions] = useState<any[]>([]);
@@ -107,7 +112,9 @@ function App(): JSX.Element {
         await new Promise((r) => setTimeout(r, delay));
 
         /*setPatterns(data);*/
-        setPatterns(data.results ?? []);
+        const results = data.results ?? [];
+        patternsRef.current = results;
+        setPatterns(results);
         setModifiedQuery(data.modified_query ?? "");
         setResolved(true);
       } catch {
@@ -172,6 +179,7 @@ function App(): JSX.Element {
       setSearchTerm(text);
       setResolved(false);
       setPatterns([]);
+      patternsRef.current = [];
       /* to allow showing and hiding the IR results summary*/
       setShowSummary(false);
       setSummaryData(null);
@@ -179,6 +187,8 @@ function App(): JSX.Element {
       setIsFadingOut(false);
       setShowLoading(true);
       setChatResetKey((k) => k + 1);
+      // --- NEW: clear AI patterns on new search ---
+      setAiPatterns([]);
 
       setTopDimensions([]);
       runFetch(text, skill, k);
@@ -238,6 +248,71 @@ function App(): JSX.Element {
       submitSearch(value, skillFilter);
     },
     [skillFilter, submitSearch],
+  );
+
+  // Called by Chat when LLM recommends specific pattern titles.
+  // Uses patternsRef (not state) so it always sees the latest patterns list,
+  // even if the callback was memoized before the search results arrived.
+  const handleAiPatterns = useCallback(
+    (recommendedTitles: string[]) => {
+      if (!recommendedTitles || recommendedTitles.length === 0) return;
+
+      const current = patternsRef.current;
+      if (current.length === 0) return;
+
+      // Build a map keyed by lowercase+trimmed title for O(1) exact lookup
+      const titleToPattern = new Map(
+        current.map((p) => [p.title.toLowerCase().trim(), p]),
+      );
+
+      const tokenise = (s: string) =>
+        s
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, " ")
+          .split(/\s+/)
+          .filter(Boolean);
+
+      const matched: Pattern[] = [];
+      const usedIds = new Set<number>();
+
+      for (const title of recommendedTitles) {
+        const key = title.toLowerCase().trim();
+
+        // 1. Exact match
+        const exact = titleToPattern.get(key);
+        if (exact && !usedIds.has(exact.id)) {
+          matched.push(exact);
+          usedIds.add(exact.id);
+          continue;
+        }
+
+        // 2. Fuzzy match via Jaccard word-overlap (handles LLM paraphrasing)
+        const llmTokens = new Set(tokenise(title));
+        let bestScore = 0;
+        let bestPattern: Pattern | null = null;
+        for (const p of current) {
+          if (usedIds.has(p.id)) continue;
+          const pTokens = tokenise(p.title);
+          const overlap = pTokens.filter((t) => llmTokens.has(t)).length;
+          const union = new Set([...llmTokens, ...pTokens]).size;
+          const score = union > 0 ? overlap / union : 0;
+          if (score > bestScore) {
+            bestScore = score;
+            bestPattern = p;
+          }
+        }
+        // Accept if ≥ 40% token overlap
+        if (bestScore >= 0.4 && bestPattern) {
+          matched.push(bestPattern);
+          usedIds.add(bestPattern.id);
+        }
+      }
+
+      if (matched.length > 0) {
+        setAiPatterns(matched);
+      }
+    },
+    [], // no deps needed — reads from ref, not state
   );
 
   const handleVote = useCallback(async (id: number, vote: "up" | "down") => {
@@ -329,6 +404,12 @@ function App(): JSX.Element {
 
   const hasSearch = searchTerm.trim() !== "";
   const showNoResults = hasSearch && resolved && patterns.length === 0;
+
+  // Build merged display list: AI picks first (in LLM-recommended order),
+  // then remaining SVD results (already sorted by score from the API), deduped.
+  const aiPatternIds = new Set(aiPatterns.map((p) => p.id));
+  const svdRemainder = patterns.filter((p) => !aiPatternIds.has(p.id));
+  const displayPatterns = [...aiPatterns, ...svdRemainder];
 
   return (
     <>
@@ -601,6 +682,21 @@ function App(): JSX.Element {
           </div>
         )}
 
+        {useLlm && showSummary && (
+          <Chat
+            key={chatResetKey}
+            onSearchTerm={handleChatSearch}
+            onAiPatterns={handleAiPatterns}
+            summaryData={summaryData}
+            patterns={patterns.map((p) => ({
+              title: p.title,
+              description: p.description,
+              skill_level: p.skill_level,
+              pattern_link: p.pattern_link,
+            }))}
+          />
+        )}
+
         {/* trending strip — always visible when no active search */}
         {!hasSearch && (
           <div className="featured-section">
@@ -615,7 +711,9 @@ function App(): JSX.Element {
                       pattern={pattern}
                       index={i}
                       onVote={handleVote}
-                      topDimensionIds={topDimensions.map((d: any) => d.dimension)}
+                      topDimensionIds={topDimensions.map(
+                        (d: any) => d.dimension,
+                      )}
                       isSearchResult={false}
                     />
                   </div>
@@ -648,12 +746,12 @@ function App(): JSX.Element {
 
           {resolved &&
             (() => {
-              const sorted = [...patterns].sort((a, b) => b.score - a.score);
-              const cols: (typeof sorted)[] = Array.from(
+              // use displayPatterns (AI first, then SVD remainder) ---
+              const cols: (typeof displayPatterns)[] = Array.from(
                 { length: numCols },
                 () => [],
               );
-              sorted.forEach((p, i) => cols[i % numCols].push(p));
+              displayPatterns.forEach((p, i) => cols[i % numCols].push(p));
               return cols.map((col, ci) => (
                 <div
                   key={ci}
@@ -670,8 +768,11 @@ function App(): JSX.Element {
                       pattern={pattern}
                       index={ci + row * numCols}
                       onVote={handleVote}
-                      topDimensionIds={topDimensions.map((d: any) => d.dimension)}
+                      topDimensionIds={topDimensions.map(
+                        (d: any) => d.dimension,
+                      )}
                       isSearchResult={true}
+                      isAiRecommended={aiPatternIds.has(pattern.id)}
                     />
                   ))}
                 </div>
@@ -686,20 +787,6 @@ function App(): JSX.Element {
           </span>
         </footer>
       </div>
-
-      {/* LLM Search  */}
-      {useLlm && (
-        <Chat
-          key={chatResetKey}
-          onSearchTerm={handleChatSearch}
-          summaryData={summaryData}
-          patterns={patterns.map((p) => ({
-            title: p.title,
-            description: p.description,
-            skill_level: p.skill_level,
-          }))}
-        />
-      )}
     </>
   );
 }
