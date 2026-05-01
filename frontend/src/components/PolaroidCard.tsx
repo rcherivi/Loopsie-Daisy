@@ -58,13 +58,16 @@ type Props = {
   pattern: Pattern;
   index: number;
   onVote?: (id: number, vote: "up" | "down") => void;
-  dimensions?: string[];
+  topDimensionIds?: number[];
+  isSearchResult?: boolean;
   isAiRecommended?: boolean;
 };
 
 export default function PolaroidCard({
   pattern,
   onVote,
+  topDimensionIds = [],
+  isSearchResult = false,
   isAiRecommended,
 }: Props) {
   const userVote = pattern.user_vote ?? null;
@@ -85,17 +88,19 @@ export default function PolaroidCard({
         {/* front side of polaroid card */}
         <div className="polaroid-card front">
           {/* button to flip to other side */}
-          <button
-            className="flip-btn"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setFlipped((prev) => !prev);
-            }}
-            aria-label="Show explanation"
-          >
-            ?
-          </button>
+          {isSearchResult && (
+            <button
+              className="flip-btn"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setFlipped((prev) => !prev);
+              }}
+              aria-label="Show explanation"
+            >
+              ?
+            </button>
+          )}
 
           <div className="polaroid-img-wrap">
             <img
@@ -195,7 +200,15 @@ export default function PolaroidCard({
                 <div className="dimension-words-container">
                   {exp.shared_dimensions.map((d) => (
                     <div className="dimension-polaroid-words" key={d.dim}>
-                      <strong className="dimension-bold">Dim {d.dim}</strong>
+                      <strong
+                        className={`dimension-bold ${
+                          topDimensionIds.includes(d.dim)
+                            ? "dimension-highlight"
+                            : ""
+                        }`}
+                      >
+                        Dim {d.dim}
+                      </strong>
                       <span>{d.words.join(", ")}</span>
                     </div>
                   ))}
