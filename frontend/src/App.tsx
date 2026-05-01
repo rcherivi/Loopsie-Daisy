@@ -681,7 +681,7 @@ function App(): JSX.Element {
           </div>
         )}
 
-        {hasSearch && resolved && useLlm && showSummary && (
+        {hasSearch && resolved && useLlm && (
           <Chat
             key={chatResetKey}
             onSearchTerm={handleChatSearch}
