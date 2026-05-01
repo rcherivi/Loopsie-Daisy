@@ -629,8 +629,7 @@ function App(): JSX.Element {
               </p>
               {modifiedQuery && modifiedQuery !== searchTerm && (
                 <p className="active-search-label">
-                  🤖 AI refined your search to:{" "}
-                  <strong>"{modifiedQuery}"</strong>
+                  AI refined your search to: <strong>"{modifiedQuery}"</strong>
                 </p>
               )}
             </>
@@ -682,7 +681,7 @@ function App(): JSX.Element {
           </div>
         )}
 
-        {useLlm && showSummary && (
+        {hasSearch && resolved && useLlm && showSummary && (
           <Chat
             key={chatResetKey}
             onSearchTerm={handleChatSearch}
