@@ -71,7 +71,7 @@ def modify_search_query(user_query: str) -> str:
     ]
 
     try:
-        response = client.chat(prompt_query_modification, stream=False, show_thinking=False, temperature=0)
+        response = client.chat(prompt_query_modification, stream=False, show_thinking=False)
         modified_query = response.get("content", user_query)
         print (modified_query)
         return modified_query.strip()
@@ -180,6 +180,9 @@ def register_chat_route(app, json_search):
                 {"role": "system", "content": (
                     "You are a helpful assistant for a crochet and knitting pattern search engine. "
                     "Help users find and learn about crochet and knitting patterns."
+                    "Formate the results like this: "
+                    "When recommending specific patterns, end your reply with a JSON block: "
+                    '{"recommended_patterns": ["Exact Title 1", "Exact Title 2"]}'
                 )},
                 {"role": "user", "content": user_message},
             ]

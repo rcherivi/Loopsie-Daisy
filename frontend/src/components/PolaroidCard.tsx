@@ -59,9 +59,14 @@ type Props = {
   index: number;
   onVote?: (id: number, vote: "up" | "down") => void;
   dimensions?: string[];
+  isAiRecommended?: boolean;
 };
 
-export default function PolaroidCard({ pattern, onVote }: Props) {
+export default function PolaroidCard({
+  pattern,
+  onVote,
+  isAiRecommended,
+}: Props) {
   const userVote = pattern.user_vote ?? null;
   const { tilt, pin } = useMemo(() => cardStyle(pattern), [pattern]);
   const [flipped, setFlipped] = useState(false);
@@ -70,6 +75,11 @@ export default function PolaroidCard({ pattern, onVote }: Props) {
   return (
     <div className={`polaroid-wrapper ${tilt}`}>
       <Pin colorClass={pin} />
+
+      {/* AI recommended badge */}
+      {isAiRecommended && (
+        <span className="ai-recommended-badge">✨ AI Pick</span>
+      )}
 
       <div className={`polaroid-flip ${flipped ? "flipped" : ""}`}>
         {/* front side of polaroid card */}
@@ -208,20 +218,6 @@ export default function PolaroidCard({ pattern, onVote }: Props) {
             )}
 
             <div className="polaroid-dimension-back">
-              {/* {dimensions && dimensions.length > 0 ? (
-                <div className="polaroid-dimension-words-container">
-                  {dimensions.map((w, i) => (
-                    <span key={i} className="polaroid-dimension-word">
-                      {w}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="polaroid-dimension-empty">
-                  No insights available.
-                </p>
-              )} */}
-
               <button
                 className="flip-back-btn"
                 onClick={() => setFlipped(false)}
