@@ -132,16 +132,44 @@ def register_routes(app):
             "modified_query": modified_query,
         })
 
+    # @app.route("/api/patterns/summarize", methods=["POST"])
+    # def patterns_summarize():
+    #     """Called on-demand when the user clicks 'Show AI Summary'."""
+    #     data = request.get_json()
+    #     query = data.get("query", "")
+    #     pattern_titles = data.get("pattern_titles", [])
+
+    #     class _P:
+    #         def __init__(self, title): self.title = title
+    #     mock_results = [{"pattern_obj": _P(t), "score": 0} for t in pattern_titles]
+
+    #     summary = summarize_results(mock_results, query)
+    #     return jsonify({
+    #         "summary": summary.get("summary", ""),
+    #         "best_match": summary.get("best_match", None),
+    #     })
+    # In routes.py — the patterns_summarize route
+
     @app.route("/api/patterns/summarize", methods=["POST"])
     def patterns_summarize():
-        """Called on-demand when the user clicks 'Show AI Summary'."""
         data = request.get_json()
         query = data.get("query", "")
-        pattern_titles = data.get("pattern_titles", [])
+        patterns_data = data.get("patterns", [])
+        pattern_titles = data.get("pattern_titles", [])  # fallback for old callers
 
         class _P:
-            def __init__(self, title): self.title = title
-        mock_results = [{"pattern_obj": _P(t), "score": 0} for t in pattern_titles]
+            def __init__(self, title, pattern_link="N/A"):
+                self.title = title
+                self.pattern_link = pattern_link
+
+        if patterns_data:
+            mock_results = [
+                {"pattern_obj": _P(p["title"], p.get("link", "N/A")), "score": 0}
+                for p in patterns_data
+            ]
+        else:
+            # legacy fallback
+            mock_results = [{"pattern_obj": _P(t), "score": 0} for t in pattern_titles]
 
         summary = summarize_results(mock_results, query)
         return jsonify({

@@ -154,9 +154,17 @@ function App(): JSX.Element {
         const res = await fetch("/api/patterns/summarize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          // body: JSON.stringify({
+          //   query,
+          //   pattern_titles: matchedPatterns.map((p) => p.title),
+          // }),
+          // AFTER — sends titles AND links
           body: JSON.stringify({
             query,
-            pattern_titles: matchedPatterns.map((p) => p.title),
+            patterns: matchedPatterns.map((p) => ({
+              title: p.title,
+              link: p.pattern_link,
+            })),
           }),
         });
         const data = await res.json();
